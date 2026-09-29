@@ -12,9 +12,9 @@
 - **The home key stays off once you switch it off.** Show home button was the one setting the screen never wrote
   down, so it was back on at the next restart. It has a record of its own now, like every other setting beside the
   frozen block, and a check that says so holds for all of them.
-- Tested: tools/check.sh, and every board built on ESPHome 2026.9.0. The CYD takes 1,674,848 B of its 1,835,008 B
-  update slot, 91.3 %, which is 1,024 bytes more than the release before it; the Hosyond 4-inch is the next fullest
-  at 93.3 %, and no other board passes 32 %. Not tried on a screen by hand yet.
+- Tested: tools/check.sh, and every board built on ESPHome 2026.9.0. The CYD takes 1,674,416 B of its 1,835,008 B
+  update slot, 91.2 %, which is 1,136 bytes more than the same checkout without these two changes; the Hosyond
+  4-inch is the next fullest at 93.3 %, and no other board passes 32 %. Not tried on a screen by hand yet.
 
 ## 0.4.28 (firmware 0.16.0)
 
