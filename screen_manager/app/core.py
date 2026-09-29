@@ -86,7 +86,7 @@ REF = 'main'
 # The shared firmware of this app release: packages/core.yaml's SCREEN_FIRMWARE_VERSION, what every board builds
 # unless its own board file went ahead with a fix for that board alone (firmware_target, docs/BOARD_RELEASES.md). The
 # middle number is the core: the feature gates below name a shared X.Y.0, so a feature always ships with a new core.
-FIRMWARE_VERSION = '0.14.0'
+FIRMWARE_VERSION = '0.15.0'
 # The Auto standby switch a screen offers Home Assistant automations.
 AUTO_STANDBY_MIN_FIRMWARE = '0.2.41'
 # The settings page the screen opens itself, and the screen.settings tile that opens it.
@@ -101,6 +101,9 @@ DARK_MODE_MIN_FIRMWARE = '0.2.54'
 PAGE_BUTTONS_MIN_FIRMWARE = '0.2.69'
 # The house at the far left of the top bar, and a swipe up from the bottom edge: both go back to page 1.
 HOME_BUTTON_MIN_FIRMWARE = '0.2.100'
+# The bar along the top of the overview, a setting and entity of its own; off, the tiles take its room. The screen
+# keeps it anyway while it holds the only way back off a page outside the swipe (runtime_tiles::header_shown).
+TOP_BAR_MIN_FIRMWARE = '0.15.0'
 # Open a page from Home Assistant (esphome.<node>_show_page), the way a Go to page tile does.
 SHOW_PAGE_MIN_FIRMWARE = '0.2.87'
 # An alarm panel as a tile with its card and keypad (components/smart_display/alarm_panel.h); older firmware refuses the
@@ -710,13 +713,16 @@ SETTING_RULES = {
     # The house at the far left of the top bar (firmware 0.2.100+), which takes the screen back to page 1. Page 1
     # draws none. Only a screen that owns its settings has it, like dark_mode.
     'home_button': (True, None, None),
+    # The bar along the top of the overview (firmware 0.15.0+); off, the tiles grow into its room, some 18 % of a
+    # CYD's glass. Only a screen that owns its settings has it, like dark_mode.
+    'top_bar': (True, None, None),
 }
 # Firmware before 0.2.44 accepts a `settings` object with exactly its own eleven keys and refuses any
 # other size, so everything added after it travels as its own key in the layout message. Old firmware
 # ignores a key it does not know; a new screen with an old add-on keeps what it saved itself.
 # docs/SETTINGS.md walks through adding one.
 SETTINGS_BESIDE_BLOCK = ('swipe_pages', 'rotation', 'auto_home', 'auto_home_seconds', 'dark_mode', 'page_buttons',
-                         'home_button')
+                         'home_button', 'top_bar')
 
 # ----- The screen owns its settings (firmware 0.2.49+) -----
 # A screen offers every setting as an entity of its own device, and the settings page on the screen, Home
@@ -742,6 +748,7 @@ SETTING_ENTITIES = {
     'dark_mode': ('switch', 'Dark mode'),
     'page_buttons': ('switch', 'Page buttons'),
     'home_button': ('switch', 'Show home button'),
+    'top_bar': ('switch', 'Top bar'),
 }
 # Entities firmware 0.2.49 added; one of them on a device means the screen owns its settings. The first five
 # existed before, so they cannot tell.

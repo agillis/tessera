@@ -26,6 +26,13 @@ namespace settings_screen {
 // 0.2.54+) only exists as the screen's own setting and entity, like page_buttons (firmware 0.2.69+): off, the
 // Previous and Next bar under the tiles goes and the tiles take its room.
 inline int32_t swipe_pages = 0, rotation = 0, auto_home = 1, auto_home_seconds = 120, dark_mode = 0, page_buttons = 1;
+// The bar along the top of the overview (firmware 0.15.0+): the page title, the home key and whatever the manager
+// puts on the right, the clock most of all. Off, the whole strip goes and the tiles take its room, as the Previous
+// and Next bar already does: some 18 % of a CYD's glass. Two things hang off it. Holding it opens this page, which
+// is then reachable from a screen.settings tile, Home Assistant or ESP Screens only. And a page that is not in the
+// swipe (a detail page) offers Back there while the page buttons are off, which is why runtime_tiles keeps the bar
+// on a layout that has such a page: leaving would be impossible otherwise.
+inline int32_t top_bar = 1;
 // The house at the far left of the top bar (firmware 0.2.100+): one tap and the screen is back on page 1, from
 // wherever it stands. On page 1 there is nowhere to go, so it is not drawn there and the page title starts at the
 // margin as it always did. Off, the bar is exactly what it was.
@@ -155,7 +162,7 @@ inline SetResult set(const std::string &key, int32_t value) {
   const auto before = s;
   const int32_t before_swipe = swipe_pages, before_rotation = rotation, before_home = auto_home,
                 before_home_seconds = auto_home_seconds, before_dark = dark_mode, before_buttons = page_buttons,
-                before_home_button = home_button;
+                before_home_button = home_button, before_top_bar = top_bar;
   int32_t reported = 0;
   auto flag = [](int32_t v) -> int32_t { return v ? 1 : 0; };
   if (key == "standby_enabled") reported = s.standby_enabled = flag(value);
@@ -181,11 +188,12 @@ inline SetResult set(const std::string &key, int32_t value) {
   else if (key == "auto_home_seconds") reported = auto_home_seconds = std::clamp<int32_t>(value, 30, 3600);
   else if (key == "dark_mode") reported = dark_mode = flag(value);
   else if (key == "page_buttons") reported = page_buttons = flag(value);
+  else if (key == "top_bar") reported = top_bar = flag(value);
   else if (key == "home_button") reported = home_button = flag(value);
   else return SetResult::unknown;
   if (s == before && swipe_pages == before_swipe && rotation == before_rotation && auto_home == before_home &&
       auto_home_seconds == before_home_seconds && dark_mode == before_dark && page_buttons == before_buttons &&
-      home_button == before_home_button)
+      home_button == before_home_button && top_bar == before_top_bar)
     return SetResult::same;
   changed(key.c_str(), reported);
   return SetResult::changed;
@@ -352,6 +360,8 @@ inline constexpr Row screen_rows[] = {
          [](int32_t value) { set("swipe_pages", value); }),
   toggle(screen_text::txt::settings_page_buttons, []() -> int32_t { return page_buttons; },
          [](int32_t value) { set("page_buttons", value); }),
+  toggle(screen_text::txt::settings_top_bar, []() -> int32_t { return top_bar; },
+         [](int32_t value) { set("top_bar", value); }),
   toggle(screen_text::txt::settings_home_button, []() -> int32_t { return home_button; },
          [](int32_t value) { set("home_button", value); }),
   // Turning the screen: every board the half turn, a square one the quarter turns as well; one of the two rows shows.

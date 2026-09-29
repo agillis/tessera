@@ -16,7 +16,7 @@
 # fonts/materialdesignicons-webfont.ttf (Apache 2.0, github.com/Templarian/MaterialDesign-Webfont).
 ############################################################
 substitutions:
-  SCREEN_FIRMWARE_VERSION: "0.14.0"
+  SCREEN_FIRMWARE_VERSION: "0.15.0"
   DASHBOARD_INBOX_INTERNAL: "false"
   CALIBRATION_ON_BOOT: "false"                     # a bench build: start on the touch test page
   ROOM_NAME: ""                                    # top left until ESP Screens sends the screen name
@@ -1507,6 +1507,20 @@ switch:
       - lambda: 'settings_screen::set("page_buttons", 1);'
     turn_off_action:
       - lambda: 'settings_screen::set("page_buttons", 0);'
+  # Off, the bar along the top goes and the tiles take its room (firmware 0.15.0+). Holding that bar is what opens
+  # the settings page, so with it gone the page is reached from a screen.settings tile, Home Assistant or ESP Screens.
+  # The bar stays while it carries the only way back off a page outside the swipe (runtime_tiles::header_shown).
+  - platform: template
+    id: setting_top_bar
+    name: "Top bar"
+    icon: "mdi:dock-top"
+    entity_category: config
+    restore_mode: DISABLED
+    lambda: return settings_screen::top_bar != 0;
+    turn_on_action:
+      - lambda: 'settings_screen::set("top_bar", 1);'
+    turn_off_action:
+      - lambda: 'settings_screen::set("top_bar", 0);'
   # The house at the far left returns to the configured Home page (firmware 0.3.0+).
   # A detail page with hidden bottom navigation uses this position for Back, even when Home is disabled.
   - platform: template
@@ -2241,8 +2255,10 @@ script:
             const auto wanted = id(setting_rotation)->index_of(std::to_string(settings_screen::rotation) + "°");
             if (!id(setting_rotation)->has_state() || !shown.has_value() || !wanted.has_value() || *shown != *wanted) id(setting_rotation)->update();
           }
-          // The Page buttons setting moves the cards into the bar's room or back (firmware 0.2.69+).
+          // The Page buttons setting moves the cards into the bar's room or back (firmware 0.2.69+), and the
+          // Top bar setting the same at the top (firmware 0.15.0+).
           if (runtime_tiles::enabled) runtime_tiles::page_buttons_changed();
+          if (runtime_tiles::enabled) runtime_tiles::top_bar_changed();
           settings_screen::refresh();
           // A display setting (the clock's format, say): drawn like a minute turning (firmware 0.3.2+).
           runtime_tiles::mark_time();

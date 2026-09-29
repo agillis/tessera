@@ -18,7 +18,7 @@ from core import (ALERT_ACTION_FIELD, ALERT_ACTION2_FIELD, ALERT_CHOICE_ACTION, 
                   CONTROLS, COVER_TILE_MIN_FIRMWARE, DISPLAYS, FIRMWARE_MAX_PAGES, FIRMWARE_MAX_TILES, FULL_PAGE_MIN_FIRMWARE, LIVE_MIN_FIRMWARE,
                   PAGE_TILE_REPEAT_MIN_FIRMWARE, SETTINGS_PAGE_MIN_FIRMWARE, TILE_BACKGROUNDS, TILE_EVENTS, TILE_RESULT_EVENT,
                   WAKE_SLEEP_MIN_FIRMWARE, SETTING_ENTITIES_MIN_FIRMWARE, DARK_MODE_MIN_FIRMWARE, PAGE_BUTTONS_MIN_FIRMWARE,
-                  HOME_BUTTON_MIN_FIRMWARE, SHOW_PAGE_MIN_FIRMWARE)
+                  HOME_BUTTON_MIN_FIRMWARE, SHOW_PAGE_MIN_FIRMWARE, TOP_BAR_MIN_FIRMWARE)
 # Full-page tiles, navigation tiles and one tile per cell of the screen's pages.
 FULL_PAGE_VERSION = '.'.join(str(part) for part in FULL_PAGE_MIN_FIRMWARE)
 LIVE_VERSION = '.'.join(str(part) for part in LIVE_MIN_FIRMWARE)
@@ -365,6 +365,7 @@ Every screen has these entities in Home Assistant, on its ESPHome device. `<scre
 | `switch.<screen>_back_to_page_1_on_standby` | On: going into standby also goes back to page 1. |
 | `switch.<screen>_swipe_between_pages` | On: swipe between pages. |
 | `switch.<screen>_page_buttons` | On: the Previous and Next bar under the tiles on a screen with more than one page. Off: no bar, the tiles take its room, and only swiping or Go to page tiles change the page. Firmware {PAGE_BUTTONS_MIN_FIRMWARE} or newer. |
+| `switch.<screen>_top_bar` | On: the bar along the top of the overview, with the page title, the home key and the clock. Off: no bar, the tiles take its room. Holding that bar is what opens the settings page on the screen, so with it off the page is reached from a `screen.settings` tile, from `esphome.<screen>_open_settings` or from ESP Screens. The screen keeps the bar anyway on a layout that has a page outside the swipe while `page_buttons` is off, because Back lives there. Firmware {TOP_BAR_MIN_FIRMWARE} or newer. |
 | `switch.<screen>_show_home_button` | On: the Tessera logo at the far left of the top bar (a house before firmware 0.10.0); tapping it goes back to page 1. Off: the page title starts at the margin, as before. Firmware {HOME_BUTTON_MIN_FIRMWARE} or newer. |
 | `select.<screen>_rotation` | `0°` or `180°`, a half turn that keeps the screen's grid; a square screen also `90°` and `270°`. |
 

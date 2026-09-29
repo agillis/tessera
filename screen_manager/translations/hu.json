@@ -148,6 +148,7 @@
       "also_on_standby": "Készenlétkor is",
       "swipe_between_pages": "Lapozás húzással",
       "page_buttons": "Lapozógombok",
+      "top_bar": "Felső sáv",
       "home_button": "Kezdőlap gomb",
       "rotation": "Elforgatás",
       "address": "Cím",
@@ -1767,6 +1768,7 @@
         "home_on_standby": "Készenlétkor is",
         "swipe_pages": "Lapozás húzással",
         "page_buttons": "Lapozógombok",
+        "top_bar": "Felső sáv",
         "home_button": "Kezdőlap gomb",
         "rotation": "Elforgatás"
       },

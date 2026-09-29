@@ -29,6 +29,7 @@ changes them with the entity's own action, and leaves them out of the layout mes
 | Also on standby | `switch.<screen>_back_to_page_1_on_standby` | `home_on_standby` |
 | Swipe between pages | `switch.<screen>_swipe_between_pages` | `swipe_pages` |
 | Page buttons (0.2.69+) | `switch.<screen>_page_buttons` | `page_buttons` |
+| Top bar (0.15.0+) | `switch.<screen>_top_bar` | `top_bar` |
 | Show home button (0.2.100+) | `switch.<screen>_show_home_button` | `home_button` |
 | Rotation | `select.<screen>_rotation` | `rotation` (0.2.80+ on every board: a half turn on any glass, the quarter turns as well on a square one) |
 
@@ -69,7 +70,7 @@ The page is a menu of groups, each of which opens a page of its own:
 |---|---|
 | Brightness | Brightness (dimmable backlight), Dark mode, Auto standby, Standby after, Standby brightness or Screen on in standby (boards that can go dark) |
 | Night (boards that can go dark) | Night mode, Starts, Ends, Night brightness or Screen on at night |
-| Screen | Back to Home, After, Also on standby (boards that can go dark), Swipe between pages, Page buttons, Show home button, Rotation |
+| Screen | Back to Home, After, Also on standby (boards that can go dark), Swipe between pages, Page buttons, Top bar, Show home button, Rotation |
 | This screen | Screen, Address, Firmware, Home Assistant, Calibrate touch (a resistive panel that has a wizard), Restart |
 
 Every change is stored on the screen, applied at once and published on its entity, so Home Assistant and
@@ -78,6 +79,24 @@ cards with the same rows: a switch for a toggle, `-` and `+` that repeat while h
 rotation. A screen whose device has a Calibrate touch button also gets a This screen card with that button.
 The 12 or 24-hour clock is not on this panel: it is Settings → Language & region, for every screen. A change there applies at once, without Save. An offline screen shows its values as
 unknown and takes no changes until it is back.
+
+### Turning the top bar off
+
+**Top bar** (firmware 0.15.0+) takes the whole strip along the top away: the page title, the home key and whatever
+the manager puts on the right, the clock most of all. The tiles take its room, 41 to 58 pixels depending on the
+board, some 18 % of the glass on a CYD, where a tile grows from 157 to 188 pixels of height. Off is off for the
+whole layout, exactly as the room for the page buttons is, so walking through the pages never moves a tile.
+
+Two things hang off that bar, and both survive it:
+
+- **Holding it is what opens this page.** With the bar gone there is nothing to hold, so the settings page is reached
+  from a `screen.settings` tile, from `esphome.<screen>_open_settings`, or from Home Assistant and ESP Screens, which
+  change the entity directly. The strip that takes the hold is hidden with the bar, or it would swallow the taps of
+  the tiles that moved up into its room.
+- **Back off a page outside the swipe.** While the page buttons are off, that Back is the bar's leading key. So a
+  layout that has such a page keeps its bar whatever the setting says (`runtime_tiles::header_shown`): there would be
+  no way off that page at all. The editor draws the same bar in the mockup for the same reason
+  (`navigationHeader` in `web/src/model/pages.ts`).
 
 ## The rules the page follows
 

@@ -61,8 +61,10 @@ using settings_screen::quarter_turns;
 using settings_screen::auto_home;
 using settings_screen::auto_home_seconds;
 using settings_screen::page_buttons;
+using settings_screen::top_bar;
 inline esphome::ESPPreferenceObject rotation_preference;
 inline esphome::ESPPreferenceObject buttons_preference;
+inline esphome::ESPPreferenceObject top_bar_preference;
 inline esphome::ESPPreferenceObject swipe_preference;
 inline esphome::ESPPreferenceObject home_preference;
 inline esphome::ESPPreferenceObject dark_preference;
@@ -139,6 +141,18 @@ inline int previous_button_page(int page) {
 }
 inline bool header_back() {
   return !settings_screen::page_buttons && shown_page && model.page_data.detail(*shown_page);
+}
+// Whether the bar along the top is drawn at all (firmware 0.15.0+). Off, it goes and the tiles take its room, but
+// not while it carries the only way off a page that is not in the swipe: with the page buttons off, Back is its
+// leading key (page_protocol.h footer()), and there would be no way back from such a page at all. The question is
+// asked of the whole layout, never of the page on the glass, so the tiles keep one geometry however you walk
+// through the pages, as the room for the page buttons does.
+inline bool header_shown() {
+  if (settings_screen::top_bar) return true;
+  if (settings_screen::page_buttons) return false;
+  for (size_t i = 0; i < model.page_data.records.size(); ++i)
+    if (model.page_data.detail((int) i)) return true;
+  return false;
 }
 inline lv_obj_t *time_label = nullptr;
 inline const lv_font_t *header_text_font = nullptr, *header_icon_font = nullptr;
@@ -268,6 +282,7 @@ inline void load_settings() {
   home_preference = esphome::global_preferences->make_preference<HomeTimeout>(0x484F4D31);
   dark_preference = esphome::global_preferences->make_preference<uint32_t>(0x44524B31);
   buttons_preference = esphome::global_preferences->make_preference<uint32_t>(0x50474231);
+  top_bar_preference = esphome::global_preferences->make_preference<uint32_t>(0x54425231);
   numbers_preference = esphome::global_preferences->make_preference<uint32_t>(0x4E554D31);
   uint32_t numbers_saved=0;
   if(numbers_preference.load(&numbers_saved))screen_text_numbers(numbers_saved);
@@ -277,6 +292,8 @@ inline void load_settings() {
   if(dark_preference.load(&dark_saved))settings_screen::dark_mode=dark_saved==1;
   uint32_t buttons_saved=1;
   if(buttons_preference.load(&buttons_saved))page_buttons=buttons_saved!=0;
+  uint32_t top_bar_saved=1;
+  if(top_bar_preference.load(&top_bar_saved))top_bar=top_bar_saved!=0;
   HomeTimeout home;
   if(home_preference.load(&home) && home.seconds>=30 && home.seconds<=3600){
     auto_home=home.enabled?1:0;auto_home_seconds=(int32_t)home.seconds;
@@ -302,6 +319,8 @@ inline void persist_settings() {
   dark_preference.save(&dark);
   uint32_t buttons = page_buttons ? 1 : 0;
   buttons_preference.save(&buttons);
+  uint32_t bar = top_bar ? 1 : 0;
+  top_bar_preference.save(&bar);
   uint32_t turned = (uint32_t) rotation;
   rotation_preference.save(&turned);
 }
@@ -378,7 +397,9 @@ template <class F> inline void each_card(F f) {
 // so a board states columns and rows and nothing here computes a coordinate. place_page only says which cell a
 // card takes and how many it spans. The descriptors live as long as the grid does.
 inline lv_obj_t *tile_grid = nullptr;
-inline int grid_margin = 0, grid_base_height = 0;
+// grid_base_y is where the board puts the tiles, under the top bar; with the bar hidden they start at the margin
+// instead and grid_base_y is the room they gain.
+inline int grid_margin = 0, grid_base_height = 0, grid_base_y = 0;
 inline std::array<int32_t, DIM_MAX + 1> grid_columns_dsc{};
 inline std::array<int32_t, DIM_MAX + 1> grid_rows_dsc{};
 // Bind the tile area and lay out its cells (firmware 0.2.92+: from the canvas, not from the board file). The
@@ -397,7 +418,8 @@ inline void grid_bind(lv_obj_t *container, int margin, int page_bar_height) {
   // laid out before that coordinate means anything: read straight after boot it is still zero, and the tile
   // area then runs a top bar too far down, over the page bar.
   lv_obj_update_layout(container);
-  grid_base_height = canvas_h - lv_obj_get_y(container) - page_bar_height;
+  grid_base_y = lv_obj_get_y(container);
+  grid_base_height = canvas_h - grid_base_y - page_bar_height;
   lv_obj_set_height(container, grid_base_height);
   for (size_t c = 0; c < grid.columns; ++c) grid_columns_dsc[c] = LV_GRID_FR(1);
   grid_columns_dsc[grid.columns] = LV_GRID_TEMPLATE_LAST;
@@ -6210,7 +6232,7 @@ inline void draw_header(bool live) {
   header_renderer.draw({room_label, time_label, tile_grid, settings_screen::hold_area,
                         header_text_font, header_icon_font, header_home_mark, header_back_font},
                        {record ? record->bar : empty, header_name, now_time ? now_time() : esphome::ESPTime{},
-                        now_epoch(), leading, live, screen_settings::current.clock_24h != 0}, []() {
+                        now_epoch(), leading, live, screen_settings::current.clock_24h != 0, header_shown()}, []() {
     // The leading key keeps its existing place in the shared action guard.
     if (!allowed(esphome::millis(), 14, "header navigation")) return;
     if (header_back()) go_back();
@@ -6517,7 +6539,12 @@ inline int place_page(int page, bool kept = false) {
   // between a sequential page and a detail page never changes tile geometry.
   if(tile_grid){
     auto *screen=lv_obj_get_parent(tile_grid);
-    const int height=bar||!screen?grid_base_height:lv_obj_get_height(screen)-lv_obj_get_y(tile_grid)-grid_margin;
+    // Where the tiles start and end. Without the top bar they start at the page's own margin, without the page
+    // buttons they run to the margin at the bottom; the ends are the layout's, so no page moves a card by itself.
+    const int top=header_shown()?grid_base_y:grid_margin;
+    const int bottom=bar||!screen?grid_base_height+grid_base_y:lv_obj_get_height(screen)-grid_margin;
+    if(lv_obj_get_y(tile_grid)!=top)lv_obj_set_y(tile_grid,top);
+    const int height=bottom-top;
     if(lv_obj_get_style_height(tile_grid,LV_PART_MAIN)!=height)lv_obj_set_height(tile_grid,height);
   }
   std::array<size_t,CELLS_MAX> shown;shown.fill(grid.max_tiles());
@@ -6923,6 +6950,18 @@ inline void page_buttons_changed() {
   applied_buttons=page_buttons?1:0;
   each_card([](Widgets &w){w.cached_active=-1;w.panel_dirty=true;});
   apply_page(applied_page);
+}
+// The Top bar setting changed (firmware 0.15.0+): the same page again, with the tiles in the room the bar leaves or
+// back under it. What is actually drawn is header_shown(), which the page buttons and the layout have a say in, so
+// that is what is held against the last placement rather than the setting itself.
+inline int applied_header=-1;
+inline void top_bar_changed() {
+  const int wanted=header_shown()?1:0;
+  if(!shown_page || applied_page<0 || applied_header==wanted)return;
+  applied_header=wanted;
+  each_card([](Widgets &w){w.cached_active=-1;w.panel_dirty=true;});
+  apply_page(applied_page);
+  render_header();
 }
 
 #ifdef SWIPE_PROFILE

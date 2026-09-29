@@ -148,6 +148,7 @@
       "also_on_standby": "Ook bij stand-by",
       "swipe_between_pages": "Vegen tussen pagina's",
       "page_buttons": "Paginaknoppen",
+      "top_bar": "Bovenbalk",
       "home_button": "Thuisknop tonen",
       "rotation": "Rotatie",
       "address": "Adres",
@@ -1767,6 +1768,7 @@
         "home_on_standby": "Ook bij stand-by",
         "swipe_pages": "Vegen tussen pagina's",
         "page_buttons": "Paginaknoppen",
+        "top_bar": "Bovenbalk",
         "home_button": "Thuisknop tonen",
         "rotation": "Rotatie"
       },

@@ -1413,6 +1413,7 @@ export const SETTING_GROUPS = [
     { key: "home_on_standby", kind: "toggle" },
     { key: "swipe_pages", kind: "toggle" },
     { key: "page_buttons", kind: "toggle" },
+    { key: "top_bar", kind: "toggle" },
     { key: "home_button", kind: "toggle" },
     { key: "rotation", kind: "choice", options: [0, 90, 180, 270] },
   ] },
@@ -1427,7 +1428,10 @@ export const choiceText = (_row: SettingRow, value: unknown) => `${value}°`;
 export function navigationSettings(): pages.NavigationSettings {
   const values = settingValues();
   return { pageButtons: values.page_buttons !== false, swipe: values.swipe_pages !== false,
-    homeButton: supports(0, 2, 100) && values.home_button !== false };
+    topBar: values.top_bar !== false,
+    // The home key stands in the top bar, so it goes with it (firmware 0.15.0+): a page that only the key reached
+    // is then reported as one with no way home, as it already is when the key itself is switched off.
+    homeButton: supports(0, 2, 100) && values.home_button !== false && values.top_bar !== false };
 }
 export function pageReachWarning() {
   if (!state.document) return "";

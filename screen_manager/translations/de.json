@@ -148,6 +148,7 @@
       "also_on_standby": "Auch im Standby",
       "swipe_between_pages": "Zwischen Seiten wischen",
       "page_buttons": "Seitentasten",
+      "top_bar": "Obere Leiste",
       "home_button": "Home-Taste zeigen",
       "rotation": "Drehung",
       "address": "Adresse",
@@ -1767,6 +1768,7 @@
         "home_on_standby": "Auch im Standby",
         "swipe_pages": "Zwischen Seiten wischen",
         "page_buttons": "Seitentasten",
+        "top_bar": "Obere Leiste",
         "home_button": "Home-Taste zeigen",
         "rotation": "Drehung"
       },

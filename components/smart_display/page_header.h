@@ -28,6 +28,9 @@ struct View {
   int64_t epoch;
   Leading leading;
   bool live, clock_24h;
+  // Whether the bar is drawn at all (firmware 0.15.0+). The runtime decides: the Top bar setting, unless the bar
+  // carries the only way back off a page outside the swipe (runtime_tiles::header_shown).
+  bool shown = true;
 };
 class Renderer {
   void (*leading_action)() = nullptr;
@@ -111,6 +114,19 @@ public:
 
     if (!room_label || !time_label || !header_text_font || !header_icon_font) return;
     set_visible(time_label, false);
+    // The bar is off: the page title, the items and the home key go, and so does the strip that opens the settings
+    // page on a long hold, which would otherwise take the taps of the tiles that moved up into its room. What was
+    // never built is not built now either: a screen that starts without a bar creates none of these widgets.
+    if (!view.shown) {
+      set_visible(room_label, false);
+      if (header_root) set_visible(header_root, false);
+      if (header_home_tap) set_visible(header_home_tap, false);
+      if (surface.hold_area) set_visible(surface.hold_area, false);
+      return;
+    }
+    set_visible(room_label, true);
+    if (header_root) set_visible(header_root, true);
+    if (surface.hold_area) set_visible(surface.hold_area, true);
     auto *page = lv_obj_get_parent(room_label);
     if (!header_root) {
       header_root = lv_obj_create(page);

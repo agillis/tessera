@@ -132,10 +132,21 @@ int main() {
     buttons.write(1);
     assert(page_buttons == 1);
   }
-  // The home key in the top bar (firmware 0.2.100+): on by default, the row right after Page buttons.
+  // The top bar itself (firmware 0.15.0+): on by default, the row right after the other bar's.
+  {
+    const Row &bar = row_named(screen, "Top bar");
+    assert(bar.kind == Kind::toggle && &bar == &row_named(screen, "Page buttons") + 1);
+    assert(top_bar == 1 && value_text(bar) == "On");
+    bar.write(0);
+    assert(top_bar == 0 && value_text(bar) == "Off");
+    assert(set("top_bar", 0) == SetResult::same);
+    bar.write(1);
+    assert(top_bar == 1);
+  }
+  // The home key in the top bar (firmware 0.2.100+): on by default, the row right after Top bar.
   {
     const Row &key = row_named(screen, "Show home button");
-    assert(key.kind == Kind::toggle && &key == &row_named(screen, "Page buttons") + 1);
+    assert(key.kind == Kind::toggle && &key == &row_named(screen, "Top bar") + 1);
     assert(home_button == 1 && value_text(key) == "On");
     key.write(0);
     assert(home_button == 0 && value_text(key) == "Off");
@@ -176,7 +187,9 @@ int main() {
   assert(PAGE_COUNT == 5);
   for (uint8_t p = 0; p < PAGE_COUNT; ++p) {
     const Page &page = pages[p];
-    assert(page.title != NO_TEXT && *screen_text::tr(page.title) && page.count && page.count <= 8);
+    // Nine is the Screen group with both rotation rows, of which only one ever shows; the drawing buffer that
+    // collects the visible rows holds twelve, so a group may not grow past that.
+    assert(page.title != NO_TEXT && *screen_text::tr(page.title) && page.count && page.count <= 9);
     for (uint8_t i = 0; i < page.count; ++i) {
       const Row &row = page.rows[i];
       assert(row.label != NO_TEXT && *label_text(row));
@@ -248,7 +261,7 @@ int main() {
       {"night_start", -5, 0}, {"night_end", 2000, 1439}, {"night_brightness", 7, 7}, {"clock_24h", 0, 0},
       {"home_on_standby", 1, 1}, {"swipe_pages", 2, 1}, {"rotation", 100, 90}, {"rotation", 400, 270},
       {"auto_home", 0, 0}, {"auto_home_seconds", 5, 30}, {"auto_home_seconds", 99999, 3600},
-      {"dark_mode", 7, 1}, {"page_buttons", 0, 0}, {"home_button", 0, 0},
+      {"dark_mode", 7, 1}, {"page_buttons", 0, 0}, {"home_button", 0, 0}, {"top_bar", 3, 1}, {"top_bar", 0, 0},
   };
   for (const auto &c : cases) {
     result = set(c.key, c.value);
@@ -258,7 +271,7 @@ int main() {
   assert(screen_settings::current.standby_seconds == 86400 && screen_settings::current.brightness == 100);
   assert(screen_settings::current.night_start == 0 && screen_settings::current.night_end == 1439);
   assert(swipe_pages == 1 && rotation == 270 && auto_home == 0 && auto_home_seconds == 3600 && dark_mode == 1 &&
-         page_buttons == 0 && home_button == 0);
+         page_buttons == 0 && home_button == 0 && top_bar == 0);
   assert(screen_settings::current.valid());
   // Dark mode again is the same look: nothing stored, applied or reported; off is a change.
   {

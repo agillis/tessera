@@ -148,6 +148,7 @@
       "also_on_standby": "Also on standby",
       "swipe_between_pages": "Swipe between pages",
       "page_buttons": "Page buttons",
+      "top_bar": "Top bar",
       "home_button": "Show home button",
       "rotation": "Rotation",
       "address": "Address",
@@ -1767,6 +1768,7 @@
         "home_on_standby": "Also on standby",
         "swipe_pages": "Swipe between pages",
         "page_buttons": "Page buttons",
+        "top_bar": "Top bar",
         "home_button": "Show home button",
         "rotation": "Rotation"
       },

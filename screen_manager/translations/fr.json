@@ -148,6 +148,7 @@
       "also_on_standby": "Aussi en veille",
       "swipe_between_pages": "Balayer entre les pages",
       "page_buttons": "Boutons de page",
+      "top_bar": "Barre du haut",
       "home_button": "Afficher le bouton accueil",
       "rotation": "Rotation",
       "address": "Adresse",
@@ -1767,6 +1768,7 @@
         "home_on_standby": "Aussi en veille",
         "swipe_pages": "Balayer entre les pages",
         "page_buttons": "Boutons de page",
+        "top_bar": "Barre du haut",
         "home_button": "Afficher le bouton accueil",
         "rotation": "Rotation"
       },

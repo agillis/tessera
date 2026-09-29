@@ -793,6 +793,23 @@ describe("the title above a page (app 0.2.105, in the page's settings since 0.3.
     await second.find(".bar-wrap").trigger("click");
     expect(state.barPage).toBe(1);
   });
+  // The Top bar setting (firmware 0.15.0+): the mockup loses its bar too, so the cells are drawn the size the
+  // tiles really get. The bar stays while it holds the only way back off a page outside the swipe.
+  it("draws no bar when the screen's Top bar setting is off", async () => {
+    seedLayout({ title: "Living room", tiles: [], pages: 2, page_titles: ["", "Music"] });
+    const props = { entries: [], pages: 2, moving: null };
+    const settings = (values: Record<string, unknown>) =>
+      Object.assign(state.inventory.screens[0], { settings: { owner: "screen", keys: ["top_bar", "page_buttons"],
+        values, unavailable: [], rotations: [0, 180], switches: [] } });
+    settings({ top_bar: true, page_buttons: true });
+    expect(mount(DevicePage, { props: { page: 0, ...props } }).find(".bar-wrap").exists()).toBe(true);
+    settings({ top_bar: false, page_buttons: true });
+    expect(mount(DevicePage, { props: { page: 0, ...props } }).find(".bar-wrap").exists()).toBe(false);
+    // A page outside the swipe, with the page buttons off: Back lives in the bar, so the bar stays.
+    state.document!.pages[1].navigation.excludeFromPagination = true;
+    settings({ top_bar: false, page_buttons: false });
+    expect(mount(DevicePage, { props: { page: 0, ...props } }).find(".bar-wrap").exists()).toBe(true);
+  });
 });
 
 // New screen: which way the screen will hang (app 0.2.107). The choice is a build choice, so it is made here and

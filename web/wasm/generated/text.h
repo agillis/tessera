@@ -1,4 +1,4 @@
-static_assert(screen_text::KEYS_HASH == 0x883B3A2Du && screen_text::KEY_COUNT == 388,
+static_assert(screen_text::KEYS_HASH == 0x5173B1A1u && screen_text::KEY_COUNT == 389,
               "screen_text_keys.h does not match screen_manager/translations/en.json: run tools/i18n.py header");
 const char *const screen_text::TABLE[] = {
     ".",
@@ -118,6 +118,7 @@ const char *const screen_text::TABLE[] = {
     "Also on standby",
     "Swipe between pages",
     "Page buttons",
+    "Top bar",
     "Show home button",
     "Rotation",
     "Address",

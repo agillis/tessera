@@ -14,13 +14,16 @@ import TopbarSvg from "./TopbarSvg.vue";
 import PageNavigation from './PageNavigation.vue';
 import PageMenu from './PageMenu.vue';
 import Icon from './ui/Icon.vue';
-import type { NavigationIntent } from '../model/pages';
+import { navigationHeader, type NavigationIntent } from '../model/pages';
 
 const props = defineProps<{ page: number; entries: { tile: Tile; slot: number }[]; pages: number; moving: Tile | null; map?: boolean; preview?: boolean; canGoBack?: boolean }>();
 const emit = defineEmits<{ navigate: [intent: NavigationIntent] }>();
 const owned = computed(() => pageAt(props.page));
 const isHome = computed(() => owned.value?.id === state.document?.homePageId);
 const backInHeader = computed(() => !navigationSettings().pageButtons && Boolean(owned.value?.navigation.excludeFromPagination));
+// The screen's Top bar setting (firmware 0.15.0+): off, the mockup loses its bar too, and the cells grow into the
+// room as the tiles do on the glass.
+const barShown = computed(() => !state.document || navigationHeader(state.document, navigationSettings()));
 const bySlot = computed(() => new Map(props.entries.map((e) => [e.slot, e])));
 const covered = computed(() => new Set(props.entries.flatMap((e) => cellsOf(e.slot, sizeOf(e.tile)).slice(1))));
 const cells = computed(() => Array.from({ length: grid.slots }, (_, cell) => props.page * grid.slots + cell).filter((slot) => !covered.value.has(slot)));
@@ -86,7 +89,7 @@ async function onKey(e: KeyboardEvent) {
       </span>
     </div>
     <div class="device" :class="{ compact: isCompact, roomy: roomyNames }">
-      <div class="bar-wrap" :class="{ selected: !preview && barSelected }" :title="preview ? undefined : t('editor.page.edit_bar')" :role="preview ? undefined : 'button'" :tabindex="preview ? undefined : 0"
+      <div v-if="barShown" class="bar-wrap" :class="{ selected: !preview && barSelected }" :title="preview ? undefined : t('editor.page.edit_bar')" :role="preview ? undefined : 'button'" :tabindex="preview ? undefined : 0"
         @click="!preview && openBar(0, page)" @keydown.enter.prevent="!preview && openBar(0, page)">
         <TopbarSvg :items="topbarItems(page)" :name-text="pageTitleShown(page)" :home="homeKeyShown(page)" :back="backInHeader" />
         <button v-if="preview && (backInHeader || homeKeyShown(page))" type="button" class="preview-home" :aria-label="backInHeader ? screenText('screen.navigation.back') : t('editor.pages.go_home')" @click.stop="emit('navigate', { kind: backInHeader ? 'back' : 'home' })"></button>

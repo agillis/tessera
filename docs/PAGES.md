@@ -37,7 +37,7 @@ Every page initially participates in the bottom paginator and sequential swipes.
 An excluded page is a detail page:
 
 - With the bottom bar enabled, that strip shows **Back**. It reserves the same space on all pages, so navigating does not resize tiles.
-- With the bottom bar hidden, a left chevron replaces the top-bar Home control at the same visible height, with the same touch target and title position. Back works even when the ordinary Home control is disabled.
+- With the bottom bar hidden, a left chevron replaces the top-bar Home control at the same visible height, with the same touch target and title position. Back works even when the ordinary Home control is disabled. The **Top bar** setting (firmware 0.15.0+) cannot take that chevron away: a layout with a page outside the swipe keeps its top bar while the bottom bar is hidden, because leaving such a page would otherwise be impossible.
 - Back follows the route used to reach the page. Nested routes keep at most eight page IDs. Deleted destinations are skipped, and an entry without history falls back to Home.
 - Home clears that route. Sequential swipes stay within included pages and do not turn a detail page into a shortcut through the paginator.
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { i18n, loadLanguage } from '../src/i18n';
 import type { PageGrid, PageLayout, PageTile } from "../src/types";
 import { arrangeTiles, changePages, clone, connections, deletePage, duplicatePage, emptyLayout, emptyPage,
-  adaptGrid, initialPositions, instanceId, navigationFooter, navigationStep, navigationTarget, pagination, projectLayout, reachability, remapLayout, reorderPage, replaceBar, sequentialTarget, setBarItems, validatePages } from "../src/model/pages";
+  adaptGrid, initialPositions, instanceId, navigationFooter, navigationHeader, navigationStep, navigationTarget, pagination, projectLayout, reachability, remapLayout, reorderPage, replaceBar, sequentialTarget, setBarItems, validatePages } from "../src/model/pages";
 
 const grid: PageGrid = { columns: 2, rows: 3 };
 it('renders draft validation errors in the selected editor language', async () => {
@@ -102,6 +102,19 @@ describe("page-owned document operations", () => {
     expect(step.history.at(-1)).toBe(first.id);
     expect(navigationFooter(layout, settings)).toBe(true);
     expect(navigationFooter(layout, { ...settings, pageButtons: false })).toBe(false);
+  });
+  // The top bar goes with its setting (firmware 0.15.0+), but never while it holds the only way back off a page
+  // outside the swipe: runtime_tiles::header_shown makes the same call, of the whole layout and not of one page.
+  it('keeps the top bar while it carries the only way back off a detail page', () => {
+    const layout = fixture(), settings = { pageButtons: true, swipe: true, homeButton: true };
+    expect(navigationHeader(layout, settings)).toBe(true);
+    expect(navigationHeader(layout, { ...settings, topBar: false })).toBe(false);
+    expect(navigationHeader(layout, { ...settings, topBar: false, pageButtons: false })).toBe(false);
+    layout.pages[2].navigation.excludeFromPagination = true;
+    expect(navigationHeader(layout, { ...settings, topBar: false })).toBe(false);
+    expect(navigationHeader(layout, { ...settings, topBar: false, pageButtons: false })).toBe(true);
+    // A screen whose firmware has no such setting at all says nothing, and keeps its bar.
+    expect(navigationHeader(layout, { ...settings, pageButtons: false })).toBe(true);
   });
   it("preserves a wide card's controls on a one-column portrait screen", () => {
     const portrait = { columns: 1, rows: 4 };

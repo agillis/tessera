@@ -41,7 +41,7 @@ export function sequentialTarget(layout: PageLayout, current: string, direction:
   return index < 0 ? current : sequence[index + direction] ?? current;
 }
 
-export type NavigationSettings = { pageButtons: boolean; swipe: boolean; homeButton: boolean };
+export type NavigationSettings = { pageButtons: boolean; swipe: boolean; homeButton: boolean; topBar?: boolean };
 export type NavigationIntent = { kind: "home" | "back" } | { kind: "tile"; tileId: string }
   | { kind: "previous" | "next" | "swipe-previous" | "swipe-next" };
 /** Shared by the preview and reachability checks. Explicit links are independent
@@ -76,6 +76,11 @@ export function navigationStep(layout: PageLayout, current: string, history: str
   return { current: target, history: next };
 }
 export const navigationFooter = (layout: PageLayout, settings: NavigationSettings) => layout.pages.length > 1 && settings.pageButtons;
+/** The bar along the top, as runtime_tiles::header_shown decides it (firmware 0.15.0+). Off it goes and the tiles
+ * take its room, but not while it carries the only way back off a page outside the swipe: with the page buttons off,
+ * Back is its leading key. Asked of the whole layout, never of one page, so no page moves a tile by itself. */
+export const navigationHeader = (layout: PageLayout, settings: NavigationSettings) => settings.topBar !== false ||
+  (!settings.pageButtons && layout.pages.some((page) => page.navigation.excludeFromPagination));
 export function reachability(layout: PageLayout, settings: NavigationSettings) {
   const edges = new Map(layout.pages.map((page) => [page.id, new Set<string>()]));
   for (const page of layout.pages) {

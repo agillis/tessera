@@ -148,6 +148,7 @@
       "also_on_standby": "Anche in standby",
       "swipe_between_pages": "Scorri tra le pagine",
       "page_buttons": "Pulsanti pagina",
+      "top_bar": "Barra superiore",
       "home_button": "Mostra il pulsante home",
       "rotation": "Rotazione",
       "address": "Indirizzo",
@@ -1767,6 +1768,7 @@
         "home_on_standby": "Anche in standby",
         "swipe_pages": "Scorri tra le pagine",
         "page_buttons": "Pulsanti pagina",
+        "top_bar": "Barra superiore",
         "home_button": "Mostra il pulsante home",
         "rotation": "Rotazione"
       },

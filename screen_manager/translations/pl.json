@@ -148,6 +148,7 @@
       "also_on_standby": "Także w czuwaniu",
       "swipe_between_pages": "Przesuwanie stron",
       "page_buttons": "Przyciski stron",
+      "top_bar": "Górny pasek",
       "home_button": "Pokaż przycisk strony głównej",
       "rotation": "Obrót",
       "address": "Adres",
@@ -1767,6 +1768,7 @@
         "home_on_standby": "Także w czuwaniu",
         "swipe_pages": "Przesuwanie stron",
         "page_buttons": "Przyciski stron",
+        "top_bar": "Górny pasek",
         "home_button": "Pokaż przycisk strony głównej",
         "rotation": "Obrót"
       },
