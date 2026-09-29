@@ -1,3 +1,21 @@
+## 0.4.26 (firmware 0.15.0)
+
+- **The top bar can go.** A new screen setting, **Top bar**, under Settings on the screen itself, in Home Assistant
+  (`switch.<screen>_top_bar`) and in Screen settings here. Off, the bar along the top goes with the page title, the
+  home key and the clock, and the tiles take its room: about 18 % of the glass on a CYD, where a tile grows from 157
+  to 188 pixels of height, and 41 to 58 pixels on every other board. Two things to know before you switch it off.
+  Holding that bar is what opens the settings page on the screen, so with it gone the page is reached from a
+  `screen.settings` tile, from Home Assistant or from here. And a page outside the swipe offers Back in that bar
+  while the page buttons are off, so a layout with such a page keeps its bar: leaving that page would be impossible
+  otherwise. The room the bar leaves is the same on every page, as the page buttons' room already is, so walking
+  through the pages never moves a tile.
+- **The home key stays off once you switch it off.** Show home button was the one setting the screen never wrote
+  down, so it was back on at the next restart. It has a record of its own now, like every other setting beside the
+  frozen block, and a check that says so holds for all of them.
+- Tested: tools/check.sh, and every board built on ESPHome 2026.9.0. The CYD takes 1,674,848 B of its 1,835,008 B
+  update slot, 91.3 %, which is 1,024 bytes more than the release before it; the Hosyond 4-inch is the next fullest
+  at 93.3 %, and no other board passes 32 %. Not tried on a screen by hand yet.
+
 ## 0.4.25 (firmware 0.14.0)
 
 - **Stop a build from New screen too.** The wizard's build, which is the long one on a new screen, now has the same
