@@ -2959,6 +2959,10 @@ def create_app(manager, development=False):
         data = await request.json()
         manager.preflight_profile(data)
         return web.json_response(manager.firmware.start(data))
+    async def firmware_stop(request):
+        """Firmware & USB -> Stop: end the build or installation that is running now, and answer with the status the
+        page shows, as /api/firmware does."""
+        return web.json_response({**await manager.firmware.cancel(), 'taken': manager.taken_names()})
     async def firmware_override(request):
         return web.json_response(manager.firmware.override(request.match_info['file']))
     async def firmware_override_save(request):
@@ -3042,6 +3046,7 @@ def create_app(manager, development=False):
     app.router.add_put('/api/language', change_language)
     app.router.add_get('/api/firmware', firmware_status)
     app.router.add_post('/api/firmware/jobs', firmware_start)
+    app.router.add_post('/api/firmware/jobs/cancel', firmware_stop)
     app.router.add_get('/api/firmware/profiles/{file}/override', firmware_override)
     app.router.add_put('/api/firmware/profiles/{file}/override', firmware_override_save)
     app.router.add_get('/api/firmware/profiles/{file}/download', firmware_download)

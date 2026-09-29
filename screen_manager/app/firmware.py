@@ -598,6 +598,35 @@ class Firmware:
         self.task=asyncio.create_task(self.run(profile,action,target))
         return dict(self.job)
 
+    async def cancel(self):
+        """Firmware & USB -> Stop: end the build or installation that is running now (app 0.4.24).
+
+        The ESPHome CLI gets SIGTERM for its whole process group, and SIGKILL ten seconds later, exactly as a job ends
+        when the app shuts down (run's finally), so nothing goes on compiling after the page says it stopped. What
+        ESPHome compiled already stays in the build folder, so starting again carries on from there instead of building
+        everything anew. A compile that is stopped puts nothing on a screen; an upload that is stopped leaves the screen
+        on the firmware it had or in its bootloader, and installing again over USB puts it right."""
+        task = self.task
+        if not task or task.done():
+            raise ValueError(t('addon.errors.firmware.not_running'))
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        # A job stopped in the moment between start() and its task's first step never runs at all, so run's own
+        # handler doesn't see it; either way the job is over by the time this answers.
+        self._interrupted()
+        return self.status()
+
+    def _interrupted(self):
+        """The running job ends without finishing: stopped from the page, or the app shutting down."""
+        if not self.job or self.job.get('state') != 'running':
+            return
+        self.job['state'] = 'interrupted'
+        self.logs.append('Stopped: ' + self.job['action'])
+        self.job['finished'] = time.time()
+
     def build_env(self, profile):
         """The ESPHome CLI's environment: everything it downloads or builds goes in the app's own /data, which an app
         update or restart keeps and a backup leaves out (config.yaml backup_exclude), none of it in the ESPHome folder.
@@ -653,7 +682,7 @@ class Firmware:
             if action=='install': self.installed.add(profile.name)
             if image: self.images[profile.name] = image
         except asyncio.CancelledError:
-            self.job['state']='interrupted'
+            self._interrupted()
             raise
         except Exception as error:
             self.job['state']='failed';self.logs.append(self.redact(str(error)))

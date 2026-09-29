@@ -68,6 +68,15 @@ async function run(action: "validate" | "build" | "install") {
     toast(e.message);
   }
 }
+// Stop: end the build or installation that runs now (app 0.4.24). ESPHome keeps what it compiled, so starting again
+// carries on from there. A stopped job answers with the status straight away, so the page doesn't wait for its next poll.
+async function stop() {
+  try {
+    data.value = await send("firmware/jobs/cancel", "POST");
+  } catch (e: any) {
+    toast(e.message);
+  }
+}
 // The port picker first, from this click; then the build, whose image the watch above writes.
 async function runBrowser() {
   const name = file.value;
@@ -134,6 +143,7 @@ onBeforeUnmount(() => { clearInterval(timer); flash.cancel(); });
         <button type="button" class="btn quiet" id="firmware-validate" :disabled="disabled" @click="run('validate')">{{ t("editor.firmware.check") }}</button>
         <button type="button" class="btn quiet" id="firmware-build" :disabled="disabled" @click="run('build')">{{ t("editor.firmware.build") }}</button>
         <button type="button" class="btn primary" id="firmware-install" :disabled="installDisabled" @click="run('install')">{{ target === "download" ? t("editor.firmware.build_download") : target === "browser" ? t("editor.webflash.go") : t("editor.firmware.install") }}</button>
+        <button v-if="running" type="button" class="btn quiet" id="firmware-stop" @click="stop()">{{ t("editor.firmware.stop") }}</button>
         <span v-if="running" class="spin"></span>
       </div>
       <p id="firmware-status" class="status-line" role="status">{{ statusText }}</p>
