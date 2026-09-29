@@ -1,3 +1,12 @@
+## 0.4.25 (firmware 0.14.0)
+
+- **Stop a build from New screen too.** The wizard's build, which is the long one on a new screen, now has the same
+  Stop button next to its progress. A stopped build says it was stopped instead of that it went wrong: Retry builds
+  the profile that was already written again, carrying on from what ESPHome had compiled, and the log stays shut
+  because there is nothing in it to read.
+- Tested: tools/check.sh. In the wizard a running installation is stopped, and the card then shows the stopped words
+  and mark, offers Retry, and keeps the log closed.
+
 ## 0.4.24 (firmware 0.14.0)
 
 - **Stop a build.** Firmware & USB now has a Stop button next to Check and Build, which appears while a build or an
