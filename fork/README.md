@@ -26,7 +26,7 @@ python3 fork/brand.py --check    # say whether it is on (exit 1 when it is not)
 python3 fork/brand.py --remove   # take it off, for a branch that goes upstream
 ```
 
-It is one commit of its own, always the last one on `main`, and it is never cherry-picked into a pull request.
+It is one commit of its own, and it is never cherry-picked into a pull request. Later work goes on top of it; `fork/pr.sh` takes the commits you name, so the branding does not have to stay at the tip of `main`.
 Running it twice changes nothing, so after a rebase you run it again instead of resolving the same conflict by hand.
 
 The editor's own sidebar inside the add-on still says Tessera. That is on purpose: the page is built from `web/src`
