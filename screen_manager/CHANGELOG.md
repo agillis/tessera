@@ -1,3 +1,14 @@
+## 0.4.24 (firmware 0.14.0)
+
+- **Stop a build.** Firmware & USB now has a Stop button next to Check and Build, which appears while a build or an
+  installation is running. It ends the ESPHome command itself, not only the line the page shows, so a build started by
+  mistake or on the wrong profile no longer holds the machine for twenty minutes. What ESPHome compiled already stays,
+  so starting again carries on from there instead of building everything anew. A stopped build puts nothing on a
+  screen; a stopped installation leaves the screen on the firmware it had, and installing again over USB puts it right.
+- Tested: tools/check.sh. A build and an installation of the stand-in ESPHome are stopped in flight and the process
+  itself is gone afterwards, a job stopped in the moment before its first step is over as well, and stopping when
+  nothing runs says so instead of quietly doing nothing.
+
 ## 0.4.23 (firmware 0.14.0)
 
 - **Taller tiles on every screen.** Less of the glass goes to space around the tiles, and more to the tiles
