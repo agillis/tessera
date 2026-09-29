@@ -194,11 +194,14 @@ class PageLayoutTests(unittest.TestCase):
         tile["placement"] = {"row": True, "column": 0, "columns": 1, "rows": 1}
         with self.assertRaises(ValueError): validate_document(layout, Grid(3, 3))
 
-    def test_copy_does_not_silently_drop_duplicate_entity_tiles(self):
+    def test_copy_puts_the_entities_on_new_tiles(self):
         layout = self.migrate({"title": "Screen", "tiles": [{"entity": "sensor.a"}]})["layout"]
         before = deepcopy(layout)
-        with self.assertRaises(ValueError): copy_page(layout, layout["homePageId"], Grid())
+        # One entity on several tiles (firmware 0.16.0+): the copy's tiles have ids of their own.
+        full = copy_page(layout, layout["homePageId"], Grid())
         self.assertEqual(layout, before)
+        self.assertEqual([tile["content"] for tile in full["pages"][1]["tiles"]], [tile["content"] for tile in layout["pages"][0]["tiles"]])
+        self.assertNotEqual(full["pages"][1]["tiles"][0]["id"], layout["pages"][0]["tiles"][0]["id"])
         copied = copy_page(layout, layout["homePageId"], Grid(), empty=True)
         self.assertEqual(copied["pages"][1]["tiles"], [])
         self.assertFalse(copied["pages"][1]["navigation"]["excludeFromPagination"])

@@ -29,7 +29,7 @@ changes them with the entity's own action, and leaves them out of the layout mes
 | Also on standby | `switch.<screen>_back_to_page_1_on_standby` | `home_on_standby` |
 | Swipe between pages | `switch.<screen>_swipe_between_pages` | `swipe_pages` |
 | Page buttons (0.2.69+) | `switch.<screen>_page_buttons` | `page_buttons` |
-| Top bar (0.15.0+) | `switch.<screen>_top_bar` | `top_bar` |
+| Top bar (0.17.0+) | `switch.<screen>_top_bar` | `top_bar` |
 | Show home button (0.2.100+) | `switch.<screen>_show_home_button` | `home_button` |
 | Rotation | `select.<screen>_rotation` | `rotation` (0.2.80+ on every board: a half turn on any glass, the quarter turns as well on a square one) |
 
@@ -82,7 +82,7 @@ unknown and takes no changes until it is back.
 
 ### Turning the top bar off
 
-**Top bar** (firmware 0.15.0+) takes the whole strip along the top away: the page title, the home key and whatever
+**Top bar** (firmware 0.17.0+) takes the whole strip along the top away: the page title, the home key and whatever
 the manager puts on the right, the clock most of all. The tiles take its room, 41 to 58 pixels depending on the
 board, some 18 % of the glass on a CYD, where a tile grows from 157 to 188 pixels of height. Off is off for the
 whole layout, exactly as the room for the page buttons is, so walking through the pages never moves a tile.

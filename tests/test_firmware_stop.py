@@ -1,4 +1,4 @@
-"""Firmware & USB -> Stop: ending the build or installation that is running (app 0.4.24).
+"""Firmware & USB -> Stop: ending the build or installation that is running (app 0.4.27).
 
 The ESPHome CLI is the stand-in of test_firmware_download, held busy with FAKE_SLEEP. Stopping has to end that process
 itself, not only the job the app shows, and the page has to be told what happened without waiting for its next poll.

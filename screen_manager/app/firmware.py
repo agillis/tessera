@@ -599,7 +599,7 @@ class Firmware:
         return dict(self.job)
 
     async def cancel(self):
-        """Firmware & USB -> Stop: end the build or installation that is running now (app 0.4.24).
+        """Firmware & USB -> Stop: end the build or installation that is running now (app 0.4.27).
 
         The ESPHome CLI gets SIGTERM for its whole process group, and SIGKILL ten seconds later, exactly as a job ends
         when the app shuts down (run's finally), so nothing goes on compiling after the page says it stopped. What

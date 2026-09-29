@@ -21,7 +21,7 @@ const emit = defineEmits<{ navigate: [intent: NavigationIntent] }>();
 const owned = computed(() => pageAt(props.page));
 const isHome = computed(() => owned.value?.id === state.document?.homePageId);
 const backInHeader = computed(() => !navigationSettings().pageButtons && Boolean(owned.value?.navigation.excludeFromPagination));
-// The screen's Top bar setting (firmware 0.15.0+): off, the mockup loses its bar too, and the cells grow into the
+// The screen's Top bar setting (firmware 0.17.0+): off, the mockup loses its bar too, and the cells grow into the
 // room as the tiles do on the glass.
 const barShown = computed(() => !state.document || navigationHeader(state.document, navigationSettings()));
 const bySlot = computed(() => new Map(props.entries.map((e) => [e.slot, e])));

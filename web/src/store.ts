@@ -8,12 +8,13 @@ import { agoText, barMetricsFor, clockText, dateText, itemKey, type ItemView, wh
 import { createLayout, dimensions, type Size, versionAtLeast } from "./model/layout";
 import { validPreviewShape, type PreviewProfile } from "./model/preview";
 import renderer from "./wasm/renderer.json";
-import type { Capability, ChildTile, FeedbackView, ChangelogSection, EntityAction, HeaderItem, Inventory, Layout, Screen, Tile, PageLayout, PageDocument, PageGrid, PageWorkspace } from "./types";
+import type { Capability, ChildTile, FeedbackView, ChangelogSection, EntityAction, HeaderItem, Inventory, Layout, Screen, Tile, PageLayout, PageTile, PageDocument, PageGrid, PageWorkspace } from "./types";
 
 import * as pages from "./model/pages";
 import { DraftHistory, type HistoryScope } from './model/draft-history';
 import { suggestedPageTitle } from './model/page-naming';
 import { validateCardOptions } from './model/page-validation';
+import pageRules from './model/page-rules.json';
 import { canonicalOptions, coupledOptions } from './model/tile-options';
 import { completePositions, workspaceSaver } from './model/page-workspace';
 import { resolveConflict, savedDraft } from './model/page-conflict';
@@ -23,7 +24,7 @@ export type Inspector =
   | { kind: "bar"; index: number }
   | { kind: "bar-add" }
   | { kind: "page"; id: string }
-  | { kind: "inspect"; entity?: string };
+  | { kind: "inspect"; entity?: string; slot?: number; key?: number };
 // A whole page on its way to another place in the row (app 0.2.121): where it came from, where it is heading, and
 // the row as it stands while it is in the air (`order[position]` is the page drawn there).
 export type PageDrag = { from: number; to: number; order: number[] };
@@ -139,7 +140,7 @@ export function createVirtualScreen(name: string, profile: PreviewProfile) {
   const screen: Screen = {
     id, name: name.trim(), online: false, virtual: true, board, orientation,
     firmware: renderer.firmware, firmware_known: renderer.firmware, tile_limit: 64, full_page: true,
-    page_tiles_repeat: true, in_sync: true, shape, layout: { title: name.trim(), tiles: [], pages: 1 },
+    page_tiles_repeat: true, entity_tiles_repeat: true, in_sync: true, shape, layout: { title: name.trim(), tiles: [], pages: 1 },
     source_grid: sourceGrid, page_document: document, page_capability: 'ready',
     tile_sizes: ['single', 'wide', 'full', 'tall', 'square'],
   };
@@ -166,13 +167,17 @@ export const fullPage = computed(() => {
   const full = currentScreen.value?.full_page;
   return typeof full === "boolean" ? full : supports(0, 2, 62);
 });
-// Several tiles that go to the same page, such as a way back to page 1 on every sub-page (firmware 0.2.65); every
-// other entity stays once per screen.
+// Several tiles that go to the same page, such as a way back to page 1 on every sub-page (firmware 0.2.65), and any
+// entity on several tiles (firmware 0.16.0, GitHub #83) but a clock with keys, which its keys name.
 export const pageTilesRepeat = computed(() => {
   const repeat = currentScreen.value?.page_tiles_repeat;
   return typeof repeat === "boolean" ? repeat : supports(0, 2, 65);
 });
-export const repeatable = (id: string) => pageTilesRepeat.value && pageTarget(id) > 0;
+export const entityTilesRepeat = computed(() => {
+  const repeat = currentScreen.value?.entity_tiles_repeat;
+  return typeof repeat === "boolean" ? repeat : supports(0, 16, 0);
+});
+export const repeatable = (id: string) => pageTarget(id) > 0 ? pageTilesRepeat.value : entityTilesRepeat.value && !(id in pageRules.keyHolders);
 // Whether the screen's board draws pictures (camera tiles, an album cover): the add-on says so per screen from the
 // board's own camera sizes (app 0.2.94), and this page always comes with that add-on.
 export const pictures = computed(() => Boolean(currentScreen.value?.pictures));
@@ -663,7 +668,9 @@ export function addTile(id: string) {
     state.insertKey = null;
     const clock = layout.tiles.find((item) => item.id === holder);
     if (clock && placeKey(newTile(id), clock, key)) {
-      const added = state.layout!.tiles.find((item) => item.entity === id && item.in === clock.entity);
+      // The key in the place it was put in: the same entity may stand under the clock twice (firmware 0.16.0+).
+      const added = state.layout!.tiles.find((item) => item.entity === id && item.in === clock.entity && item.key === key)
+        || state.layout!.tiles.find((item) => item.entity === id && item.in === clock.entity);
       if (added) openTile(added);
     }
     return;
@@ -734,6 +741,12 @@ export function connectTile(tileId: string, target: string | "home") {
 }
 export function setPageExcluded(id: string, excluded: boolean) {
   return editDocument((draft) => { const page = draft.pages.find((item) => item.id === id); if (page) page.navigation.excludeFromPagination = excluded; });
+}
+// A full copy of a page puts its tiles on the screen twice: a page tile when the firmware takes that (0.2.65), any
+// other entity from 0.16.0, but never a clock with keys, which is on a screen once.
+export function pageCopyable(page: PageTile[] | undefined) {
+  return Boolean(page?.every((tile) => tile.content.kind === "navigation" ? pageTilesRepeat.value :
+    entityTilesRepeat.value && !(tile.content.kind === "builtin" && `screen.${tile.content.name}` in pageRules.keyHolders)));
 }
 export function duplicateEditorPage(id: string, empty: boolean) {
   if (!state.document || !state.documentGrid) return false;
@@ -1429,7 +1442,7 @@ export function navigationSettings(): pages.NavigationSettings {
   const values = settingValues();
   return { pageButtons: values.page_buttons !== false, swipe: values.swipe_pages !== false,
     topBar: values.top_bar !== false,
-    // The home key stands in the top bar, so it goes with it (firmware 0.15.0+): a page that only the key reached
+    // The home key stands in the top bar, so it goes with it (firmware 0.17.0+): a page that only the key reached
     // is then reported as one with no way home, as it already is when the key itself is switched off.
     homeButton: supports(0, 2, 100) && values.home_button !== false && values.top_bar !== false };
 }

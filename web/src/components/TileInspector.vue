@@ -212,7 +212,8 @@ const backgrounds = computed(() => Object.entries(state.inventory.backgrounds ||
 const fromHA = computed(() => Boolean(state.inventory.entities.find((e) => e.id === props.tile.entity)?.icon));
 const showIcon = computed(() => Boolean(state.inventory.icons) && (domain.value !== "screen" || goesTo.value > 0) && !["forecast", "sunpath"].includes(display.value));
 function inspect() {
-  state.inspector = { kind: "inspect", entity: props.tile.entity };
+  // This tile's own data: its entity may be on several tiles (firmware 0.16.0+).
+  state.inspector = { kind: "inspect", entity: props.tile.entity, slot: props.tile.slot, key: props.tile.key };
 }
 // The way up in the head: the page the tile stands on opens that page's settings.
 const pageId = computed(() => state.document?.pages.find((page) => page.tiles.some((item) => item.id === props.tile.id))?.id);

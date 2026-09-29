@@ -266,7 +266,8 @@ class Endpoints(unittest.IsolatedAsyncioTestCase):
         source = io.BytesIO()
         Image.new('RGB', (160, 80), (50, 120, 200)).save(source, 'PNG')
         self.manager.camera.fetch_cover = AsyncMock(return_value=source.getvalue())
-        fields = {'tiles': 'media_player.test', 'size': '64', 'bg': '123456', 'session': '1111111111111111',
+        # Firmware 0.16.0+ names each square's tile by index (`idx`); the preview takes the request with it.
+        fields = {'tiles': 'media_player.test', 'idx': '0', 'size': '64', 'bg': '123456', 'session': '1111111111111111',
                   'rev': '2222222222222222', 'view': '4', 'atlas': json.dumps([[0, 0, 120, 80, 8, 0]])}
         body = {'request': {'service': 'esphome.screen_camera', 'event': True, 'data': fields},
                 'shape': {'width': 720, 'height': 720}}

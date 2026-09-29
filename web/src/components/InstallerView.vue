@@ -166,7 +166,7 @@ function showProgress(current: any, lines: string[]) {
 const flashing = computed(() => installer.browser && job.value?.state === "success" && flash.state.phase !== "done" && flash.state.phase !== "failed");
 const running = computed(() => job.value?.state === "running" || flashing.value);
 const ok = computed(() => installer.view === "done" || (job.value?.state === "success" && (!installer.browser || flash.state.phase === "done")));
-// Stopped from here or by an app restart (app 0.4.25): not a failure, so it doesn't get the words or the mark of one.
+// Stopped from here or by an app restart (app 0.4.28): not a failure, so it doesn't get the words or the mark of one.
 // Retry builds it again; the profile was written before the build began and is still there.
 const stopped = computed(() => installer.view !== "done" && job.value?.state === "interrupted");
 // Only the add-on's own job can be stopped from here. While this browser writes the image over Web Serial there is

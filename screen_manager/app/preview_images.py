@@ -17,7 +17,8 @@ async def answer(manager, data):
     fields = command.get('data')
     if command.get('service') != 'esphome.screen_camera' or command.get('event') is not True or command.get('templates'):
         raise ValueError('Only firmware image events are accepted.')
-    allowed = {'inbox', 'entity', 'tiles', 'size', 'bg', 'session', 'rev', 'view', 'atlas'}
+    # `idx`: the tiles of a live strip by index (firmware 0.16.0+), which the preview does not need.
+    allowed = {'inbox', 'entity', 'tiles', 'idx', 'size', 'bg', 'session', 'rev', 'view', 'atlas'}
     if (not isinstance(fields, dict) or set(fields) - allowed or
             any(not isinstance(v, str) or len(v) > 8192 for v in fields.values()) or
             not re.fullmatch(r'[0-9a-f]{16}', fields.get('session', '')) or

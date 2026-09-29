@@ -41,9 +41,16 @@ for a new panel from the nearest real board; its sizes come from the look (docs/
 
 Since firmware 0.14.0 the page keeps one margin all round. The top bar keeps `GRID_MARGIN` from the sides of the
 glass and from its top edge (measured to the home key, the bar's tallest ink), the cards keep it from the sides, and
-the page keys put the ink of their chevrons on it (`runtime_tiles::nav_align`). The tiles start one row gap under
-the home key, so `SCROLL_Y` is `GRID_MARGIN` + the key's height + `GRID_GAP_Y`, and the page bar is the look's
-own height but never more than 7 mm, the least a finger needs (`ui::touch_min`).
+the page keys put the ink of their chevrons on it (`runtime_tiles::nav_align`). The page bar is the look's own
+height but never more than 7 mm, the least a finger needs (`ui::touch_min`).
+
+Since firmware 0.15.0 (GitHub #90) everything in the top bar shares the home key's middle line: the page's name by
+its capitals, the items on the right by their digits, and their icons and the analog dial by their own middle, all
+measured from the fonts on the screen (`page_header::Renderer`). The bar's band (`BAR_BAND`) is the key, or the name
+centred on it with the tails of g, p, y and commas below, whichever reaches lower; it follows from the font sizes,
+so it does not change from one page name or language to the next. The tiles start `BAR_SPACE` below that band: one
+row gap, but never less than 1.5 mm. `SCROLL_Y` is `GRID_MARGIN` + `BAR_BAND` + `BAR_SPACE`, and the screen's self
+test fails a page where the tail of a g in the name would reach the tile area.
 
 The margin and the gaps keep their size in millimetres on every glass, but never take more pixels than the look
 gives them at its own density (16, 12 and 12 in the standard look, 9, 8 and 4 in the compact one). A denser glass

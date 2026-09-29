@@ -34,7 +34,9 @@ leaves them out.
   a tile but a placement (`page_layout._keys`). The clock owns the order and the keys go with it.
 - **The compiled tiles** (`page_layout.compile_tiles`) list a key after the placed tiles, as
   `{"entity": ..., "name": ..., "in": "screen.nightstand", "key": 0, "options": {...}}`. `in` names the tile it
-  stands under by its entity, which is on a screen once; `key` is its place, from 0. Every other part of the add-on
+  stands under by its entity; `key` is its place, from 0. Any other entity may be on a screen several times
+  (firmware 0.16.0+), a key and a tile of the same entity too, but the bedside clock is on a screen once, so `in`
+  always names one tile. Every other part of the add-on
   (the watched entities, history, the layout sensor, the tile limit, the checks when saving) reads this list and
   treats a key as a tile. `core.KEY_HOLDERS` says which tiles hold keys and how many; `core.KEY_DOMAINS` which
   entities may be one (anything but a picture).

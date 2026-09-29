@@ -369,6 +369,12 @@ struct Tile {
   bool pending = false, confirmed = false, local_feedback = false;
   // When Home Assistant refused the action a tap sent (firmware 0.2.58+); the tile says so for a moment.
   uint32_t refused_at = 0;
+  // A lock's "tap again" (firmware 0.16.0+ keeps it on its tile: an entity may stand on several, and a second tap
+  // counts on the tile or the card of the first alone): the action it waits for (a lock_panel::Act, -1 for none), since
+  // when, and whether the card asked. `noted_at`: a lock-only tile tapped while locked says so for a moment.
+  int8_t ask_act = -1;
+  uint32_t ask_since = 0, noted_at = 0;
+  bool ask_card = false;
   // When the state last changed to another one (firmware 0.3.3+): an alarm panel marks the moment it armed or
   // disarmed with a short animation.
   uint32_t changed_at = 0;

@@ -143,7 +143,7 @@ inline int previous_button_page(int page) {
 inline bool header_back() {
   return !settings_screen::page_buttons && shown_page && model.page_data.detail(*shown_page);
 }
-// Whether the bar along the top is drawn at all (firmware 0.15.0+); the rule itself is page_protocol.h's, beside
+// Whether the bar along the top is drawn at all (firmware 0.17.0+); the rule itself is page_protocol.h's, beside
 // the one for the bar at the bottom.
 inline bool header_shown() {
   return model.page_data.header(settings_screen::page_buttons != 0, settings_screen::top_bar != 0);
@@ -290,7 +290,7 @@ inline void load_settings() {
   uint32_t top_bar_saved=1;
   if(top_bar_preference.load(&top_bar_saved))top_bar=top_bar_saved!=0;
   // The home key had no preference of its own from firmware 0.2.100 to 0.14.0: switching it off held until the
-  // screen restarted, and then it was back (app 0.4.26).
+  // screen restarted, and then it was back (app 0.4.29).
   uint32_t home_button_saved=1;
   if(home_button_preference.load(&home_button_saved))settings_screen::home_button=home_button_saved!=0;
   HomeTimeout home;
@@ -337,6 +337,10 @@ struct Widgets {
   // A key of a bedside clock (firmware 0.8.0+): the card is the round key itself, `key_size` across, in the place its
   // clock gives it (place_page). The card, circle, icon and colours are a tile's; only the shape is the key's.
   bool key=false; int key_size=0;
+  // The heartbeat an alarm or lock circle of this card runs (an AlarmLook) and the state change it last marked
+  // (alarm_tile_look). They belong to the card, not to the slot: a kept page's cards leave the glass with their
+  // animation and come back with it (firmware 0.16.0+; before, a ring kept beating on a card whose lock had settled).
+  uint8_t alarm_look=0; uint32_t alarm_mark=0;
   // `extra_full`: the size the parts were built for; a slot that changes between full and double width rebuilds them.
   // `base_circle`: the board's icon circle (TILE_ICON_SIZE), the one size of the head a board states.
   int base_circle=0;
@@ -2232,10 +2236,9 @@ inline bool alarm_arrived(const Tile &t){return t.changed_at&&esphome::millis()-
 // A lock's heartbeat: slow while it moves, quicker while its tile waits for the second tap (lock section below).
 inline AlarmLook lock_look(const Tile &t);
 inline uint32_t lock_accent(const Tile &t);
-inline uint8_t alarm_tile_looks[CELLS_MAX]{};
-inline uint32_t alarm_tile_marks[CELLS_MAX]{};
 inline void alarm_tile_look(size_t slot,const Tile *t){
   if(slot>=widgets.size()||!widgets[slot].circle)return;
+  auto &w=widgets[slot];
   // A key of a bedside clock is its circle (render_slot): the ring grows out of the round card, since the card cuts off
   // what its children draw past its edge, and a circle as large as the card has no room inside it.
   lv_obj_t *circle=widgets[slot].key?widgets[slot].tile:widgets[slot].circle;
@@ -2245,21 +2248,21 @@ inline void alarm_tile_look(size_t slot,const Tile *t){
   const bool alarm=t&&(t->domain()=="alarm_control_panel"||lock);
   // The slot shows another tile now: its circle stands still.
   if(!alarm){
-    if(alarm_tile_looks[slot]||alarm_tile_marks[slot])alarm_still(circle);
-    alarm_tile_looks[slot]=LOOK_NONE;alarm_tile_marks[slot]=0;
+    if(w.alarm_look||w.alarm_mark)alarm_still(circle);
+    w.alarm_look=LOOK_NONE;w.alarm_mark=0;
     return;
   }
   const AlarmLook want=alarm&&awake()&&fresh()?(lock?lock_look(*t):alarm_look(*t)):LOOK_NONE;
   const bool large=ui::large();
-  if(alarm&&want==LOOK_NONE&&alarm_arrived(*t)&&alarm_tile_marks[slot]!=t->changed_at&&awake()){
-    alarm_tile_marks[slot]=t->changed_at;alarm_still(circle);alarm_tile_looks[slot]=LOOK_NONE;
+  if(alarm&&want==LOOK_NONE&&alarm_arrived(*t)&&w.alarm_mark!=t->changed_at&&awake()){
+    w.alarm_mark=t->changed_at;alarm_still(circle);w.alarm_look=LOOK_NONE;
     const bool closed=lock?t->state=="locked":alarm_panel::armed(t->state);
     if(closed)alarm_beat(circle,theme::state(alarm_panel::GREEN),600,ui::px(large?10:5),true);
     alarm_spring(circle,closed?120:0);
     return;
   }
-  if(want==alarm_tile_looks[slot])return;
-  alarm_tile_looks[slot]=want;alarm_still(circle);
+  if(want==w.alarm_look)return;
+  w.alarm_look=want;alarm_still(circle);
   if(want==LOOK_NONE)return;
   const uint32_t colour=theme::state(lock?lock_accent(*t):alarm_panel::color(t->state));
   alarm_beat(circle,colour,want==LOOK_ARMING?1600:want==LOOK_PENDING?600:1000,ui::px(large?10:5),false);
@@ -2492,6 +2495,8 @@ inline void alarm_state_arrived(unsigned index,const std::string &before){
   if(alarm_attempt.active&&t.entity==alarm_attempt_entity)alarm_settled(alarm_attempt.settle(t.state,esphome::millis()),true);
   if(!alarm_panel::calls_for_attention(t.state)||alarm_panel::calls_for_attention(before)||!t.available())return;
   if(!enabled||!model.ready())return;
+  // A panel on several tiles gets a state message per tile: the first of them wakes the screen, once.
+  for(size_t i=0;i<index;++i)if(model.tiles[i].entity==t.entity)return;
   ESP_LOGI("alarm","%s is %s: the screen wakes with its card",t.entity.c_str(),t.state.c_str());
   if(alarm_wake)alarm_wake();
   settings_screen::close();
@@ -2564,22 +2569,33 @@ inline void alarm_command(int cmd){
 // the code is the second tap. The animations are the alarm panel's: a heartbeat while the lock moves or waits for its
 // second tap, a ring going round while it moves, and a ring that closes round the lock when it locks.
 inline constexpr int LOCK_KEY_FIRST=700;   // 700 lock, 701 unlock, 702 open
-// The one "tap again" the screen waits for: which lock, on its tile or on its card, and since when.
-struct LockAsk { lock_panel::Confirm confirm; std::string entity; bool card=false; bool shown=false; };
-inline LockAsk lock_ask;
-// A line in place of the tile's state for a moment: a lock-only tile tapped while locked.
-inline std::string lock_note_entity;
-inline uint32_t lock_note_at=0;
+// The "tap again" a tile waits for lives on the tile (Tile::ask_act, firmware 0.16.0+); one tile waits at a time, and
+// `lock_waits` says whether any does, so lock_tick has nothing to look at otherwise.
+inline bool lock_waits=false;
+inline lock_panel::Confirm lock_ask_of(const Tile &t){
+  lock_panel::Confirm c;if(t.ask_act>=0){c.act=(lock_panel::Act)t.ask_act;c.since=t.ask_since;}return c;
+}
+inline void lock_keep_ask(Tile &t,const lock_panel::Confirm &c){t.ask_act=c.act==lock_panel::NONE?-1:(int8_t)c.act;t.ask_since=c.since;}
 inline lv_obj_t *lock_ring=nullptr;
 inline lock_panel::Lock lock_of(const Tile &t){
   lock_panel::Lock l;l.state=t.state;l.supported=t.supported;l.assumed=t.extra().assumed;l.available=t.available()&&fresh();return l;
 }
 inline lock_panel::Guard lock_guard(const Tile &t){return lock_panel::guard_of(t.guard);}
-inline bool lock_noting(const Tile &t){return lock_note_entity==t.entity&&esphome::millis()-lock_note_at<3000;}
+inline bool lock_noting(const Tile &t){return t.noted_at&&esphome::millis()-t.noted_at<3000;}
 inline bool lock_asking(const Tile &t,bool card,lock_panel::Act a=lock_panel::NONE){
-  const uint32_t now=esphome::millis();
-  if(lock_ask.entity!=t.entity||lock_ask.card!=card)return false;
-  return a==lock_panel::NONE?lock_ask.confirm.any(now):lock_ask.confirm.waiting(a,now);
+  if(t.ask_act<0||t.ask_card!=card)return false;
+  const uint32_t now=esphome::millis();const auto c=lock_ask_of(t);
+  return a==lock_panel::NONE?c.any(now):c.waiting(a,now);
+}
+// Ends the "tap again" of every tile but `keep`: each shows its state again at once, on its tile or its open card.
+inline void lock_end_asks(size_t keep=SIZE_MAX){
+  for(size_t i=0;i<model.count;++i){
+    auto &t=model.tiles[i];
+    if(i==keep||t.ask_act<0)continue;
+    t.ask_act=-1;
+    if(!t.ask_card)refresh_tile(i);
+    else if(detail_index==i&&detail_root&&!lv_obj_has_flag(detail_root,LV_OBJ_FLAG_HIDDEN))redraw_detail();
+  }
 }
 inline const char *lock_state_text(const std::string &state){
   using namespace screen_text;
@@ -2628,23 +2644,28 @@ inline void lock_do(unsigned index,lock_panel::Act act,bool card){
   if(!can(lock_of(t),act,lock_guard(t))||t.waiting(now))return;
   const auto &x=t.extra();
   if(needs_code(x.code_format,x.code_saved)){
-    lock_ask.confirm.clear();
+    t.ask_act=-1;
     if(!code_typable(x.code_format)){alarm_card_note=txt::alarm_letters;alarm_card_note_at=now;}
     else{alarm_wipe(alarm_pad.code);alarm_pad.open=true;alarm_pad.mode=act;alarm_pad.note=0;alarm_pad.entity=t.entity;}
     if(card)redraw_detail();else{active_index=(int)index;show_detail(index);}
     return;
   }
   if(confirms(act)){
-    if(lock_ask.entity!=t.entity||lock_ask.card!=card)lock_ask.confirm.clear();
-    lock_ask.entity=t.entity;lock_ask.card=card;
-    if(!lock_ask.confirm.press(act,now)){
-      lock_ask.shown=true;
+    // One tile waits at a time: a first tap here ends another tile's wait, and the card's wait is not the tile's.
+    lock_end_asks(index);
+    if(t.ask_card!=card)t.ask_act=-1;
+    t.ask_card=card;
+    auto c=lock_ask_of(t);
+    const bool second=c.press(act,now);
+    lock_keep_ask(t,c);
+    if(!second){
+      lock_waits=true;
       ESP_LOGI("lock","%s: tap again to %s",t.entity.c_str(),act==OPEN?"open":"unlock");
       if(card)redraw_detail();else refresh_tile(index);
       return;
     }
   }
-  lock_ask.confirm.clear();lock_ask.shown=false;
+  t.ask_act=-1;
   alarm_attempt.begin(act,false,now);alarm_attempt_entity=t.entity;
   action(service(act),t.entity);
   if(card)redraw_detail();else refresh_tile(index);
@@ -2655,7 +2676,7 @@ inline void lock_tap(unsigned index){
   auto &t=model.tiles[index];
   const auto act=lock_panel::tap(lock_of(t),lock_guard(t));
   if(act==lock_panel::NONE){
-    if(t.state=="locked"&&lock_guard(t)==lock_panel::Guard::LOCK_ONLY){lock_note_entity=t.entity;lock_note_at=esphome::millis();refresh_tile(index);}
+    if(t.state=="locked"&&lock_guard(t)==lock_panel::Guard::LOCK_ONLY){t.noted_at=std::max<uint32_t>(1,esphome::millis());refresh_tile(index);}
     return;
   }
   lock_do(index,act,false);
@@ -2792,19 +2813,22 @@ inline void lock_state_arrived(unsigned index,const std::string &before){
   auto &t=model.tiles[index];
   if(alarm_attempt.active&&t.entity==alarm_attempt_entity)
     alarm_settled(alarm_attempt.settle_if(lock_panel::reached(t.state,(lock_panel::Act)alarm_attempt.mode),esphome::millis()),true);
-  if(before!=t.state&&lock_ask.entity==t.entity){lock_ask.confirm.clear();}
+  if(before!=t.state)t.ask_act=-1;
 }
 // Every tick (tick()): a "tap again" that ran out, or a screen that went to sleep, puts the tile or the card back.
 inline void lock_tick(){
-  if(!lock_ask.shown)return;
+  if(!lock_waits)return;
   const uint32_t now=esphome::millis();
-  if(!awake())lock_ask.confirm.clear();
-  if(lock_ask.confirm.any(now))return;
-  lock_ask.shown=false;
-  for(size_t i=0;i<model.count;++i)if(model.tiles[i].entity==lock_ask.entity){
-    refresh_tile(i);
-    if(lock_ask.card&&detail_index==i&&detail_root&&!lv_obj_has_flag(detail_root,LV_OBJ_FLAG_HIDDEN))redraw_detail();
+  bool waiting=false;
+  for(size_t i=0;i<model.count;++i){
+    auto &t=model.tiles[i];
+    if(t.ask_act<0)continue;
+    if(awake()&&lock_ask_of(t).any(now)){waiting=true;continue;}
+    t.ask_act=-1;
+    if(!t.ask_card)refresh_tile(i);
+    else if(detail_index==i&&detail_root&&!lv_obj_has_flag(detail_root,LV_OBJ_FLAG_HIDDEN))redraw_detail();
   }
+  lock_waits=waiting;
 }
 inline void lock_command(int cmd){
   if(detail_index>=model.count)return;
@@ -2822,7 +2846,7 @@ inline AlarmLook lock_look(const Tile &t){
   return LOOK_NONE;
 }
 // A card that closes forgets the second tap its keys waited for.
-inline void lock_card_closed(){if(lock_ask.card)lock_ask.confirm.clear();}
+inline void lock_card_closed(){if(detail_index<model.count&&model.tiles[detail_index].ask_card)model.tiles[detail_index].ask_act=-1;}
 // ---- History card (firmware 0.2.51+): numbers as a line with axes, states as a timeline ----
 // Sensors, numbers, switches, binary sensors and people. The card asks the manager for the chosen range when it
 // opens (an hour, a day or a week; always 24 averages or 96 slots) and draws what comes back. A finger on the
@@ -5943,7 +5967,7 @@ inline void render_slot(size_t slot) {
   int palette_state=(available?2:0)|(on?1:0)|(slider_on?4:0)|((card_art(t)&&w.picture&&!lv_obj_has_flag(w.picture,LV_OBJ_FLAG_HIDDEN))?8:0)|
                     (lock_tile&&lock_asking(t,false)?16:0)|(lock_tile?(int)(lock_panel::color(t.state)&0xFF)<<8:0);
   // An alarm panel's circle beats while it counts down or goes off, and springs once when it arms or disarms.
-  if (d == "alarm_control_panel" || d == "lock" || alarm_tile_looks[slot] || alarm_tile_marks[slot]) alarm_tile_look(slot, &t);
+  if (d == "alarm_control_panel" || d == "lock" || w.alarm_look || w.alarm_mark) alarm_tile_look(slot, &t);
   if (w.cached_active == palette_state && !w.panel_dirty) { style_tall(w,t);lap(swipe_profile::GEOMETRY); return; }
   w.cached_active = palette_state;w.panel_dirty=false;
   // Home Assistant's colour for the state (tile_controls::accent), and a lamp's own colour while it is on.
@@ -6448,6 +6472,16 @@ inline bool check_tile_geometry() {
     }
     ok=ok && fits;
   }
+  // The tiles start below the top bar with room to spare (firmware 0.15.0+, GitHub #90): the tail of a g in the
+  // page's name, the lowest any title can reach in its font, stays at least a pixel clear of the tile area.
+  if(room_label && tile_grid && !lv_obj_has_flag(room_label,LV_OBJ_FLAG_HIDDEN)){
+    const lv_font_t *font=lv_obj_get_style_text_font(room_label,LV_PART_MAIN);lv_font_glyph_dsc_t tail;
+    if(font && lv_font_get_glyph_dsc(font,&tail,'g',0) && tail.box_h){
+      const int baseline=lv_obj_get_y(room_label)+(font->line_height-font->base_line);
+      const int lowest=baseline-tail.ofs_y,grid_top=lv_obj_get_y(tile_grid);
+      if(grid_top<=lowest){ok=false;ESP_LOGE("ui_test","Top bar clear FAIL tail=%d grid=%d",lowest,grid_top);}
+    }
+  }
   return ok;
 }
 
@@ -6503,7 +6537,7 @@ inline void key_shape(Widgets &w,bool key){
   // The heartbeat of an alarm or a lock moves from the circle to the card or back (alarm_tile_look): the old one stands
   // still, the next render starts it on the new one.
   alarm_still(key?w.circle:w.tile);
-  if(const size_t slot=&w-widgets.data();slot<CELLS_MAX){alarm_tile_looks[slot]=LOOK_NONE;alarm_tile_marks[slot]=0;}
+  w.alarm_look=LOOK_NONE;w.alarm_mark=0;
   w.key=key;w.cached_active=-1;
 }
 // The keys of the bedside clock on this page where its layout puts them, once the grid has placed the clock's card.
@@ -6952,7 +6986,7 @@ inline void page_buttons_changed() {
   each_card([](Widgets &w){w.cached_active=-1;w.panel_dirty=true;});
   apply_page(applied_page);
 }
-// The Top bar setting changed (firmware 0.15.0+): the same page again, with the tiles in the room the bar leaves or
+// The Top bar setting changed (firmware 0.17.0+): the same page again, with the tiles in the room the bar leaves or
 // back under it. What is actually drawn is header_shown(), which the page buttons and the layout have a say in, so
 // that is what is held against the last placement rather than the setting itself.
 inline int applied_header=-1;
@@ -7440,7 +7474,9 @@ inline void cover_tick(uint32_t now) {
 // board's third online_image; a page of covers alone loads once. It waits for the alert's picture, a cover or the
 // camera full screen: one picture loads at a time. A page turn, a card over the page, another look or another track
 // (the picture's mark in the media state) changes what is wanted: the strip is dropped and asked for again.
-struct LiveWish { std::string entities, grounds, marks, atlas; int size = 0, atlas_x = 0, atlas_y = 0, atlas_scale = picture_store::SCALE_ONE; uint32_t every = 15000; bool cameras = false; };
+// `tiles`: the tiles' own indexes in the same order (firmware 0.16.0+): one entity may be on several tiles of a page,
+// each with its own square and settings, and the app takes each tile's own settings by its index.
+struct LiveWish { std::string entities, tiles, grounds, marks, atlas; int size = 0, atlas_x = 0, atlas_y = 0, atlas_scale = picture_store::SCALE_ONE; uint32_t every = 15000; bool cameras = false; };
 inline LiveWish live_wish;
 inline camera_view::Feed live;  // entity: the list asked for
 inline std::string live_have;   // the list the strip on screen holds, "" for a tile without a picture
@@ -7496,8 +7532,9 @@ inline LiveWish live_wanted() {
     if (!w.tile || lv_obj_has_flag(w.tile, LV_OBJ_FLAG_HIDDEN) || w.index >= model.count) continue;
     const auto &t = model.tiles[w.index];
     if (!t.pictured()) continue;
-    if (!want.entities.empty()) { want.entities += ','; want.grounds += ','; want.marks += ','; }
+    if (!want.entities.empty()) { want.entities += ','; want.tiles += ','; want.grounds += ','; want.marks += ','; }
     want.entities += t.entity;
+    want.tiles += std::to_string(w.index);
     char ground[8];
     uint32_t behind=(t.transparent||card_art(t)) ? theme::hex(theme::PAGE) : theme::surface(t.background);
     if(atlas){
@@ -7528,24 +7565,33 @@ inline LiveWish live_wanted() {
 inline std::string live_key(const LiveWish &w) {
   char size[12];
   snprintf(size, sizeof(size), "%d", w.size);
-  return "live|" + w.entities + "|" + w.grounds + "|" + w.marks + "|" + w.atlas + "|" + size;
+  return "live|" + w.entities + "|" + w.tiles + "|" + w.grounds + "|" + w.marks + "|" + w.atlas + "|" + size;
 }
-// The strip's square for a tile, or nullptr while the strip is not here (or has no picture of this camera).
-inline lv_image_dsc_t *live_ready(const std::string &entity, int size, int &square) {
+// Whether the n-th item of a comma list is this one.
+inline bool list_has_at(const std::string &list, int n, const std::string &item) {
+  size_t start = 0;
+  for (int i = 0; i < n; ++i) { start = list.find(',', start); if (start == std::string::npos) return false; ++start; }
+  const size_t comma = list.find(',', start);
+  return list.compare(start, comma == std::string::npos ? std::string::npos : comma - start, item) == 0 &&
+         (comma == std::string::npos ? list.size() - start : comma - start) == item.size();
+}
+// The strip's square for a tile, or nullptr while the strip is not here (or has no picture of this camera). The square
+// is the tile's own place in the wish, found by its index: an entity on several tiles has a square on each.
+inline lv_image_dsc_t *live_ready(size_t index, const std::string &entity, int size, int &square) {
+  square = list_index(live_wish.tiles, std::to_string(index));
+  if (square < 0) return nullptr;
   if (pictures_kept()) {
     if (live_wish.atlas.empty() && live_wish.size != size) return nullptr;
     auto *kept = pictures.entry(live_key(live_wish));
     if (kept) {
-      square = list_index(kept->note, entity);  // the tiles the app answered for, "" where it had no picture
-      if (square < 0) return nullptr;
+      // The tiles the app answered for, "" where it had no picture.
+      if (!list_has_at(kept->note, square, entity)) return nullptr;
       return !live_wish.atlas.empty() || kept->image.header.h >= (square + 1) * size ? &kept->image : nullptr;
     }
     // Not kept (no room in the store): the download itself, as on a board without PSRAM, until the page turns
     // (live_release). Before firmware 0.9.0 such a page showed no picture at all (GitHub #68).
   }
-  if (!live.loaded || (live_wish.atlas.empty() && live_wish.size != size)) return nullptr;
-  square = list_index(live_have, entity);
-  if (square < 0) return nullptr;
+  if (!live.loaded || (live_wish.atlas.empty() && live_wish.size != size) || !list_has_at(live_have, square, entity)) return nullptr;
   auto *src = camera_live.source();
   return src && src->data && (!live_wish.atlas.empty() || src->header.h >= (square + 1) * size) ? src : nullptr;
 }
@@ -7598,7 +7644,7 @@ inline void live_release() {
 inline void live_place(Widgets &w, const Tile &t, int size, int x, int y) {
 #if LV_USE_IMAGE
   int square = -1;
-  lv_image_dsc_t *src = t.pictured() ? live_ready(t.entity, size, square) : nullptr;
+  lv_image_dsc_t *src = t.pictured() ? live_ready(w.index, t.entity, size, square) : nullptr;
   if (src) {
     if (!w.picture) {
       w.picture = lv_image_create(w.tile);
@@ -7665,8 +7711,9 @@ inline void live_request() {
   request.is_event = true;
   char size_text[12];
   snprintf(size_text, sizeof(size_text), "%d", live_wish.size);
-  const std::string keys[] = {"inbox", "tiles", "size", "bg", "session", "rev", "view", "atlas"}, values[] = {inbox, live_wish.entities, size_text, live_wish.grounds, protocol_key(transfer.lease), layout_rev, std::to_string(++live_view_id), live_wish.atlas};
-  const int count=live_wish.atlas.empty()?7:8;
+  // `idx` (firmware 0.16.0+): each square's tile by its index, so the app prepares it the way that tile asks.
+  const std::string keys[] = {"inbox", "tiles", "idx", "size", "bg", "session", "rev", "view", "atlas"}, values[] = {inbox, live_wish.entities, live_wish.tiles, size_text, live_wish.grounds, protocol_key(transfer.lease), layout_rev, std::to_string(++live_view_id), live_wish.atlas};
+  const int count=live_wish.atlas.empty()?8:9;
   request.data.init(count);
   for (int i = 0; i < count; ++i) {
     esphome::api::HomeassistantServiceMap entry;
@@ -7680,7 +7727,7 @@ inline void live_request() {
 inline void live_tick(uint32_t now) {
   if (!live_supported()) return;
   LiveWish want = live_wanted();
-  if (want.entities != live_wish.entities || want.grounds != live_wish.grounds || want.marks != live_wish.marks || want.size != live_wish.size || want.atlas != live_wish.atlas ||
+  if (want.entities != live_wish.entities || want.tiles != live_wish.tiles || want.grounds != live_wish.grounds || want.marks != live_wish.marks || want.size != live_wish.size || want.atlas != live_wish.atlas ||
       want.atlas_x != live_wish.atlas_x || want.atlas_y != live_wish.atlas_y || want.atlas_scale != live_wish.atlas_scale) {
     live_wish = want;
     live_release();

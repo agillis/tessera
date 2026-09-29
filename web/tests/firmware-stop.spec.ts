@@ -1,4 +1,4 @@
-// Firmware & USB -> Stop (app 0.4.24): the button is there only while something runs, and the answer to the stop is
+// Firmware & USB -> Stop (app 0.4.27): the button is there only while something runs, and the answer to the stop is
 // what the page shows, so the log and the state are on screen without waiting for the next poll.
 import { flushPromises, mount } from "@vue/test-utils";
 import { readFileSync } from "node:fs";

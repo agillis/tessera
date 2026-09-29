@@ -9,6 +9,7 @@ import type { ChildTile, HeaderItem, Layout, Page, PageGrid, PageLayout, PageTar
 
 import { dimensions, SIZES, type Size } from "./layout";
 import { validateCardOptions, validatePageShape } from './page-validation';
+import rules from './page-rules.json';
 
 export const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 export const instanceId = () => [...crypto.getRandomValues(new Uint8Array(8))].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -76,7 +77,7 @@ export function navigationStep(layout: PageLayout, current: string, history: str
   return { current: target, history: next };
 }
 export const navigationFooter = (layout: PageLayout, settings: NavigationSettings) => layout.pages.length > 1 && settings.pageButtons;
-/** The bar along the top, as runtime_tiles::header_shown decides it (firmware 0.15.0+). Off it goes and the tiles
+/** The bar along the top, as runtime_tiles::header_shown decides it (firmware 0.17.0+). Off it goes and the tiles
  * take its room, but not while it carries the only way back off a page outside the swipe: with the page buttons off,
  * Back is its leading key. Asked of the whole layout, never of one page, so no page moves a tile by itself. */
 export const navigationHeader = (layout: PageLayout, settings: NavigationSettings) => settings.topBar !== false ||
@@ -237,16 +238,14 @@ export function validatePages(layout: PageLayout, grid: PageGrid): PageLayout {
       }
       const entity = entityOf(layout, tile);
       validateCardOptions(tile, entity, footprintSize(tile, grid));
-      if (tile.content.kind !== "navigation") {
+      // Any entity may stand on several tiles (firmware 0.16.0+; the add-on asks an older screen to update first), but
+      // a clock with keys: its keys name it by its entity.
+      if (entity in rules.keyHolders) {
         if (entities.has(entity)) throw new Error(t("addon.errors.layout.once"));
         entities.add(entity);
       }
-      // A key is a tile on the screen too: its own id, and its entity once on the screen (app 0.4.12).
-      for (const child of tile.children || []) {
-        identity(child.id);
-        if (entities.has(child.content.entityId)) throw new Error(t("addon.errors.layout.once"));
-        entities.add(child.content.entityId);
-      }
+      // A key is a tile on the screen too, with its own id (app 0.4.12).
+      for (const child of tile.children || []) identity(child.id);
     }
   }
   return layout;
@@ -282,6 +281,8 @@ export function duplicatePage(layout: PageLayout, grid: PageGrid, pageId: string
       copy.navigation = clone(source.navigation);
       copy.tiles = source.tiles.map((tile) => {
         const next = { ...clone(tile), id: instanceId() };
+        // A key under a copied tile is a new key too: every tile and key has an id of its own.
+        if (next.children) next.children = next.children.map((child) => ({ ...child, id: instanceId() }));
         if (next.content.kind === "navigation" && next.content.target.kind === "page" && next.content.target.pageId === pageId)
           next.content.target.pageId = copy.id;
         return next;

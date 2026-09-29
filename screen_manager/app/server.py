@@ -28,8 +28,8 @@ from updates import Updater
 from aiohttp import ClientError, ClientSession, ClientTimeout, WSMsgType, web
 from core import alarm_extras, lock_extras, ALERT_EVENT, board_of, BROADCAST_EVENTS, BROADCAST_SHOW, BUILTIN, CAMERA_DOMAINS, entity_id, SETTINGS_BESIDE_BLOCK, TILE_EVENTS, TILE_RESULT_EVENT, layout_snapshot, match_screen, HEADER_MIN_FIRMWARE, NAME_TILE_SETTINGS, TRANSPORT_MIN_FIRMWARE, alert_action, alert_camera, alert_choice, alert_data, choice_service, ALERT_CHOICE_ACTION, ALERT_CHOICE_MIN_FIRMWARE, parse_firmware, alert_reference, alert_screen_choice, alert_screen_names, alert_service, alert_targets, backgrounds, builtin_name, controls_catalogue, device_prefixes, discover, discover_screens, encode, entity_slug, extras, media_cover, media_extras, forecast_kinds, header_items, inbox_prefix, message_action, min_firmware, name_clash, packets, revision, screen_items, state_message, validate_header, validate_layout, validate_settings
 from core import calibrate_entity, can_standby, dimmable, SETTING_ENTITIES, SETTING_RULES, STANDBY_KEYS, setting_action, setting_entities, setting_from_state, state_word
-from core import BOARD_KEYS
-from core import (Grid, page_target, PAGE_TILE_REPEAT_MIN_FIRMWARE, ROTATION_MIN_FIRMWARE, SHAPES, firmware_features, grid_of, orientation_at,
+from core import BOARD_KEYS, is_key
+from core import (Grid, page_target, PAGE_TILE_REPEAT_MIN_FIRMWARE, ENTITY_REPEAT_MIN_FIRMWARE, ROTATION_MIN_FIRMWARE, SHAPES, firmware_features, grid_of, orientation_at,
                   packed_slots, run_tile_event, screen_firmware, shape_of, turns_of, version_text)
 import header_bar
 import history_card
@@ -1556,8 +1556,8 @@ class Manager:
         if 'settings' in layout and 'rotation' not in data.get('settings',{}):
             layout['settings']['rotation']=self.layouts.get(inbox,{}).get('settings',{}).get('rotation',0)
         self.check_turn(screen, layout.get('settings', {}).get('rotation', 0))
-        # A page from before an option existed sends its tiles without it. It never sends a navigation tile twice
-        # (firmware 0.2.65+), so a copy keeps exactly what it was sent with.
+        # A page from before an option existed sends its tiles without it. It never sends an entity twice (a navigation
+        # tile from firmware 0.2.65, any entity from 0.16.0), so a copy keeps exactly what it was sent with.
         old_list = self.layouts.get(inbox,{}).get('tiles',[])
         old_counts, new_counts = Counter(t['entity'] for t in old_list), Counter(t['entity'] for t in layout['tiles'])
         old_tiles = {t['entity']:t for t in old_list if old_counts[t['entity']] == 1 and new_counts[t['entity']] == 1}
@@ -1614,11 +1614,15 @@ class Manager:
             layout = {'title': document['title'], 'tiles': compile_tiles(document, grid)}
         else:
             layout = validate_layout(data, grid=self.grid_of(screen) if screen else None)
-        before = {tile['entity']: tile for tile in self.layouts.get(inbox, {}).get('tiles', [])}
+        # An entity may stand on several tiles (firmware 0.16.0+): a setting one of its tiles already has passes.
+        before = {}
+        for tile in self.layouts.get(inbox, {}).get('tiles', []):
+            before.setdefault(tile['entity'], []).append(tile)
         for tile in layout['tiles']:
-            previous = before.get(tile['entity'])
-            if tile['entity'] in BUILTIN or not tile.get('options') or (previous or {}).get('options') == tile['options']:
+            copies = before.get(tile['entity'], [])
+            if tile['entity'] in BUILTIN or not tile.get('options') or any(copy.get('options') == tile['options'] for copy in copies):
                 continue
+            previous = copies[0] if copies else None
             name = tile.get('name') or self.ha.states.get(tile['entity'], {}).get('attributes', {}).get('friendly_name') or tile['entity']
             found = ha_catalogue.unsupported(tile, previous, await capabilities(tile['entity']))
             if found:
@@ -2176,20 +2180,29 @@ class Manager:
         # The same entity may have a cover on one page and an ordinary tile on
         # another. Authorize against any configured pictured tile, not the last
         # occurrence of an entity in the document.
+        placed_tiles = self.layouts.get(inbox, {}).get('tiles', [])
+        pictured = lambda tile: (tile.get('options') or {}).get('display') in ('live', 'cover') and \
+            ((tile.get('options') or {}).get('display') == 'cover') == camera_feed.cover_supported(tile['entity'])
         tiles = {}
-        for tile in self.layouts.get(inbox, {}).get('tiles', []):
-            options = tile.get('options') or {}
-            display = options.get('display')
-            entity = tile['entity']
-            if display in ('live', 'cover') and (display == 'cover') == camera_feed.cover_supported(entity):
-                tiles.setdefault(entity, []).append(options)
+        for tile in placed_tiles:
+            if pictured(tile):
+                tiles.setdefault(tile['entity'], []).append(tile.get('options') or {})
         if any(entity not in tiles for entity in entities):
             LOG.info('Live pictures for %s: not the pictured tiles of %s', ', '.join(entities), screen['name'])
             return
         paces = [min(option.get('refresh', camera_feed.LIVE_REFRESH_DEFAULT) if option.get('display') == 'live' else 0
                      for option in tiles[entity]) for entity in entities]
-        # How each picture fills its card (app 0.3.8): one tile per entity on a screen, so its options are the tile's.
-        modes = camera_feed.picture_modes(screen, lambda entity: next((o for o in tiles[entity] if o.get('display') == 'live'), None), entities) if atlas else None
+        # Each square's own tile (firmware 0.16.0+ names them by index, `idx`): an entity may be on several tiles, each
+        # with its own fit and overlay. A screen without it has an entity on one tile at most, so its first is its own.
+        own = camera_feed.live_indexes(request, entities)
+        if own is not None and not all(i < len(placed_tiles) and placed_tiles[i]['entity'] == entity and pictured(placed_tiles[i])
+                                       for i, entity in zip(own, entities)):
+            LOG.info('Live pictures for %s: not the tiles %s of %s', ', '.join(entities), request.get('idx'), screen['name'])
+            return
+        options_of = (lambda n, entity: placed_tiles[own[n]].get('options') or {}) if own is not None else \
+            (lambda n, entity: next((o for o in tiles[entity] if o.get('display') == 'live'), None))
+        # How each picture fills its card (app 0.3.8).
+        modes = camera_feed.picture_modes(screen, options_of, entities) if atlas else None
         url, listing = '', ','.join(entities)
         base = await camera_feed.base_url(self.ha.request)
         if base:
@@ -2329,10 +2342,12 @@ class Manager:
         screen and the tile the event acted on (None for an order)."""
         screen = match_screen(self.screens(), data.get('screen'), self.layouts)
         inbox = self.aliases.get(screen['id'], screen['id'])
-        # Firmware 0.2.65+ takes a navigation tile on several pages; an older screen keeps one per page it goes to.
-        repeat = (self.firmware_version(inbox, screen) or (0, 0, 0)) >= PAGE_TILE_REPEAT_MIN_FIRMWARE
-        layout, tile = run_tile_event(self.layouts.get(inbox) or {'title': screen['name'], 'tiles': []}, TILE_EVENTS[event_type], data, repeat,
-                                      self.grid_of(screen))
+        # Firmware 0.2.65+ takes a navigation tile on several pages, 0.16.0+ any entity on several tiles; an older
+        # screen keeps one per page a navigation tile goes to, and one of everything else.
+        firmware = self.firmware_version(inbox, screen) or (0, 0, 0)
+        layout, tile = run_tile_event(self.layouts.get(inbox) or {'title': screen['name'], 'tiles': []}, TILE_EVENTS[event_type], data,
+                                      firmware >= PAGE_TILE_REPEAT_MIN_FIRMWARE, self.grid_of(screen),
+                                      firmware >= ENTITY_REPEAT_MIN_FIRMWARE)
         await self.check_supported(inbox, layout)
         record = self.store.get(inbox)
         if record and record['format'] == PAGE_FORMAT:
@@ -2771,7 +2786,9 @@ def create_app(manager, development=False):
                       'word':state_word(t['entity'],manager.ha.states.get(t['entity'],{}).get('state'),manager.ha.states.get(t['entity'],{}).get('attributes'),
                                         manager.registry_index().get(t['entity']),getattr(manager.ha,'state_words',None)),
                       'attributes':state_message(i,t,manager.ha.states)['a'],
-                      'options':t.get('options',{})} for i,t in enumerate(layout['tiles'])]})
+                      'options':t.get('options',{}),
+                      # Which tile: an entity may be on several (firmware 0.16.0+); a key has no slot, its place instead.
+                      'slot':t.get('slot',-1),**({'in':t['in'],'key':t['key']} if is_key(t) else {})} for i,t in enumerate(layout['tiles'])]})
     preview_history_slots = asyncio.Semaphore(3)
     async def preview_history(request):
         """Read-only recorder data, sharing the screen detail-card cache."""

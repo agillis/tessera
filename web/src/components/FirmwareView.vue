@@ -68,7 +68,7 @@ async function run(action: "validate" | "build" | "install") {
     toast(e.message);
   }
 }
-// Stop: end the build or installation that runs now (app 0.4.24). ESPHome keeps what it compiled, so starting again
+// Stop: end the build or installation that runs now (app 0.4.27). ESPHome keeps what it compiled, so starting again
 // carries on from there. A stopped job answers with the status straight away, so the page doesn't wait for its next poll.
 async function stop() {
   try {

@@ -16,7 +16,7 @@ import TileCard from "../src/components/TileCard.vue";
 import TileInspector from "../src/components/TileInspector.vue";
 import TopbarInspector from "../src/components/TopbarInspector.vue";
 import PageInspector from "../src/components/PageInspector.vue";
-import { openBar, removePage, setTileOption, state } from "../src/store";
+import { openBar, removePage, repeatable, setTileOption, state } from "../src/store";
 import type { Inventory, Tile } from "../src/types";
 
 // The add-on's boards (screen_manager/app/boards.json, written from boards.yaml and the board files): the catalog a
@@ -361,19 +361,35 @@ describe("full-page and navigation tiles on the mockup", () => {
   });
 });
 
-describe("several tiles that go to the same page in the library (firmware 0.2.65)", () => {
+describe("several tiles of one entity in the library (firmware 0.2.65 for a page tile, 0.16.0 for any)", () => {
   it("keeps offering a placed navigation tile when the screen takes several, and adds another copy", async () => {
-    Object.assign(state.inventory.screens[0], { firmware: "0.2.65", page_tiles_repeat: true });
+    Object.assign(state.inventory.screens[0], { firmware: "0.2.65", page_tiles_repeat: true, entity_tiles_repeat: false });
     appendTiles({ entity: "screen.page_1", name: "", slot: 0 }, { entity: "light.a", name: "", slot: 1 });
     const library = mount(Library);
-    const row = () => library.find('.ent[title="screen.page_1"]');
+    const row = () => library.find('.ent[title^="screen.page_1 "]');
     expect(row().attributes("disabled")).toBeUndefined();
-    expect(row().find(".add").text()).toBe("+");
+    expect(row().attributes("title")).toContain("add it again");
+    expect(row().find(".add").text()).toBe("✓");
     expect(library.find('.ent[title="light.a"]').attributes("disabled")).toBeDefined();
-    await library.find("#hide-placed").trigger("click");
-    expect(row().exists()).toBe(true);
     await row().trigger("click");
     expect(state.layout!.tiles.filter((t) => t.entity === "screen.page_1")).toHaveLength(2);
+    expect(row().find(".add").text()).toBe("×2");
+    // Hide placed hides what is on the screen, a copy it could take again too.
+    await library.find("#hide-placed").trigger("click");
+    expect(row().exists()).toBe(false);
+  });
+  it("offers any placed entity again from firmware 0.16.0 and says how often it is there, but one bedside clock", async () => {
+    Object.assign(state.inventory.screens[0], { firmware: "0.16.0", page_tiles_repeat: true, entity_tiles_repeat: true });
+    appendTiles({ entity: "light.a", name: "", slot: 0 });
+    const library = mount(Library);
+    const row = () => library.find('.ent[title^="light.a "]');
+    expect(row().attributes("disabled")).toBeUndefined();
+    expect(row().find(".add").text()).toBe("✓");
+    await row().trigger("click");
+    expect(state.layout!.tiles.filter((t) => t.entity === "light.a")).toHaveLength(2);
+    expect(row().find(".add").text()).toBe("×2");
+    expect(repeatable("screen.nightstand")).toBe(false);
+    expect(repeatable("light.b")).toBe(true);
   });
   it("marks it placed when the screen takes one per page", () => {
     Object.assign(state.inventory.screens[0], { page_tiles_repeat: false });

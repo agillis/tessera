@@ -1,4 +1,4 @@
-## 0.4.26 (firmware 0.15.0)
+## 0.4.29 (firmware 0.17.0)
 
 - **The top bar can go.** A new screen setting, **Top bar**, under Settings on the screen itself, in Home Assistant
   (`switch.<screen>_top_bar`) and in Screen settings here. Off, the bar along the top goes with the page title, the
@@ -16,7 +16,7 @@
   update slot, 91.3 %, which is 1,024 bytes more than the release before it; the Hosyond 4-inch is the next fullest
   at 93.3 %, and no other board passes 32 %. Not tried on a screen by hand yet.
 
-## 0.4.25 (firmware 0.14.0)
+## 0.4.28 (firmware 0.16.0)
 
 - **Stop a build from New screen too.** The wizard's build, which is the long one on a new screen, now has the same
   Stop button next to its progress. A stopped build says it was stopped instead of that it went wrong: Retry builds
@@ -25,7 +25,7 @@
 - Tested: tools/check.sh. In the wizard a running installation is stopped, and the card then shows the stopped words
   and mark, offers Retry, and keeps the log closed.
 
-## 0.4.24 (firmware 0.14.0)
+## 0.4.27 (firmware 0.16.0)
 
 - **Stop a build.** Firmware & USB now has a Stop button next to Check and Build, which appears while a build or an
   installation is running. It ends the ESPHome command itself, not only the line the page shows, so a build started by
@@ -35,6 +35,56 @@
 - Tested: tools/check.sh. A build and an installation of the stand-in ESPHome are stopped in flight and the process
   itself is gone afterwards, a job stopped in the moment before its first step is over as well, and stopping when
   nothing runs says so instead of quietly doing nothing.
+
+## 0.4.26 (firmware 0.16.0)
+
+- **One entity on several tiles** (GitHub #83). A light can now be a small tile on page 1 and a tile with its slider on
+  page 3, a camera can be on two pages, and a whole page can be copied with its tiles. Every copy has its own name,
+  icon, colour, size and tap. The library keeps offering an entity that is already on the screen and marks it with a
+  check, or with how often it is there. Only the bedside clock is on a screen once. It needs firmware 0.16.0; an older
+  screen asks for its update first.
+- On firmware 0.16.0 a lock's "tap again to unlock" counts only on the tile you tapped, an alarm going off opens its
+  card once, and each copy of a camera on a page gets its own picture and its own fit.
+- A lock or alarm panel no longer keeps a pulsing ring after it settled while its page was out of view. The ring stayed
+  with the place on the screen instead of the tile, so a page that came back could show the old animation.
+- `esp_screens_add_tile` now always puts a new tile on the screen, also when the entity is there already. To change a
+  tile through an event, remove it and add it again. On firmware older than 0.16.0 it works as before.
+- Tested: tools/check.sh with new tests for copies (validation, tile events, delivery to old and new firmware, live
+  pictures by tile, page copies, the editor's library and page menu). On a Guition 4848S040 with firmware 0.16.0 and a
+  Home Assistant OS bench: a lamp, a lock, an alarm panel and a camera on several pages, a whole page copied in the
+  editor, and a page with the same camera twice. A lamp switched in Home Assistant changed on every copy, also on a page
+  that was not on screen; tapping one lock copy and then another did not unlock, and each copy kept its own "unlock
+  never" setting; the alarm going off opened its card once; each camera copy and each album cover copy showed its own
+  fit, name and tile colour. A screen put back on firmware 0.13.0 was asked to update first and got nothing, then took
+  the layout with copies once it ran 0.16.0 again. Checked by hand on the Guition and on a CYD ESP32-2432S028R: lamp
+  copies switch together, a lock opens only on two taps on the same copy, the card and the effects page of a copy carry
+  its name, and an alarm going off opens its card once on each screen. Every board builds; the CYD firmware is 16 bytes smaller
+  than 0.4.25's (91.2 % of its slot).
+
+## 0.4.25 (firmware 0.15.0)
+
+- **The top bar lines up with its logo, and its text no longer touches the tiles** (GitHub #90). Since 0.4.23 the
+  page's name and the items on the right stood on the logo's bottom line, so they looked low next to it, and on the
+  compact look (the CYD and the Hosyond 4.0) the tail of a g, p or y touched the first row of tiles. Now the name, the
+  words and icons on the right and the analog clock all share the logo's middle line, and the tiles start one row gap
+  below the lowest a title can reach, never closer than 1.5 mm. The room follows from the fonts, so it is the same on
+  every page, in every language and on every board. The tiles keep all their height on the larger screens compared
+  with 0.4.22 and before; on the compact look they give back about 2 pixels of what 0.4.23 took from under the text.
+- Tested: tools/check.sh, and the host renders of the Hosyond 4.0, the CYD, the Guition 4848S040 and the Waveshare 4.3
+  with a temperature, the date and the clock in the top bar: every self test passes, the name, the clock and the
+  icons sit within 1.5 pixels of the logo's middle, and 9 to 14 pixels stay free under the tail of a g. A Guition
+  4848S040 runs it with its own layout. The CYD firmware is 336 bytes smaller than 0.4.23's.
+
+## 0.4.24 (firmware 0.14.0)
+
+- **Album covers, station logos and camera pictures follow the app's port** (GitHub #84). Home Assistant OS lets you
+  publish the app's picture port 8098 under another number in its network settings, for example when another app
+  already uses 8098. The screens were still sent links on 8098, so they asked the other app for their pictures and
+  showed none. The app now asks the Supervisor which port it published and puts that one in the links. Docker keeps
+  `SCREEN_CAMERA_PORT` and `SCREEN_CAMERA_URL` as before.
+- Tested: tools/check.sh, with new tests for a port published as 8099, a Supervisor that answers nothing usable
+  (8098 as before) and Docker's own setting. On a Home Assistant OS bench with the port published as 8099 (8098
+  closed), a camera alert on a Guition 4848S040 showed its picture.
 
 ## 0.4.23 (firmware 0.14.0)
 

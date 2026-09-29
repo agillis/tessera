@@ -87,7 +87,7 @@ struct Pages {
     // Back through the leading top-bar control instead.
     return records.size() > 1 && page_buttons;
   }
-  // The bar along the top (firmware 0.15.0+): with its setting off it goes and the tiles take its room, unless it
+  // The bar along the top (firmware 0.17.0+): with its setting off it goes and the tiles take its room, unless it
   // carries the only way back off a page outside the swipe, which is its leading key while the page buttons are off.
   // Asked of the whole layout, like footer(), so no page moves a tile by itself.
   bool header(bool page_buttons, bool top_bar) const {

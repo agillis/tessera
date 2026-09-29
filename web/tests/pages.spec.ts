@@ -192,9 +192,11 @@ describe("page-owned document operations", () => {
     expect(moved.pages.map((page) => page.id)).toEqual(layout.pages.map((page) => page.id));
   });
 
-  it("refuses full copies with duplicate entities and offers a separate empty copy", () => {
+  it("copies a page with its entities as new tiles (firmware 0.16.0+) and offers a separate empty copy", () => {
     const layout = fixture(), first = layout.pages[0];
-    expect(() => duplicatePage(layout, grid, first.id)).toThrow("only appear once");
+    const full = duplicatePage(layout, grid, first.id), copied = full.pages[1];
+    expect(copied.tiles.map((tile) => tile.content)).toEqual(first.tiles.map((tile) => tile.content));
+    expect(copied.tiles.every((tile) => !first.tiles.some((other) => other.id === tile.id))).toBe(true);
     first.navigation.excludeFromPagination = true;
     const result = duplicatePage(layout, grid, first.id, true), copy = result.pages[1];
     expect(copy.tiles).toEqual([]);

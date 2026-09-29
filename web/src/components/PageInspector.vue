@@ -6,7 +6,7 @@ import { computed, ref } from "vue";
 import { t } from "../i18n";
 import { connections, titleOf } from "../model/pages";
 import { beginFieldEdit, endFieldEdit } from '../store';
-import { currentScreen, duplicateEditorPage, homeKeyShown, pageTitleShown, movePage, moveWorkspacePage, openBar, openTile, pageReady, pageTitle, removePage, screenTitle,
+import { currentScreen, duplicateEditorPage, pageCopyable, homeKeyShown, pageTitleShown, movePage, moveWorkspacePage, openBar, openTile, pageReady, pageTitle, removePage, screenTitle,
   setHomePage, setPageExcluded, setPageHomeControl, setPageTitle, state, topbarItems, topbarMax, workspacePositions } from "../store";
 import { textDraft } from '../model/text-draft';
 import { setScreenTitle } from '../store';
@@ -26,7 +26,7 @@ const home = computed(() => state.document?.homePageId === props.id);
 const point = computed(() => workspacePositions()[props.id] || { x: 0, y: 0 });
 const routes = computed(() => state.document ? connections(state.document).filter((route) => route.from === props.id || route.to === props.id) : []);
 const name = (id: string) => { const page = state.document?.pages.find((item) => item.id === id); return page ? titleOf(state.document!, page) : ""; };
-const canCopy = computed(() => page.value?.tiles.every((tile) => tile.content.kind === "navigation"));
+const canCopy = computed(() => pageCopyable(page.value?.tiles));
 function editRoute(tileId: string) { const tile = state.layout?.tiles.find((item) => item.id === tileId); if (tile) openTile(tile); }
 // One page and the screen's title are one thing: a single field. A page that kept a title of its own from a longer
 // row keeps its own field, so nothing is set that nobody can see.
