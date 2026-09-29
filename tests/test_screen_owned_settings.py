@@ -757,6 +757,31 @@ class Firmware(unittest.TestCase):
             # Every board turns since firmware 0.2.80 (a half turn at least): the shared script keeps the entity in step.
             self.assertIn('id(setting_rotation)->update();', text, path)
 
+    def test_every_setting_outside_the_frozen_block_is_kept_over_a_restart(self):
+        """Each of the values beside screen_settings::Settings has a preference of its own (docs/SETTINGS.md), which
+        runtime_tiles loads at boot and writes in persist_settings. One that is only set and never saved is back at
+        its default after the next restart: that is what the home key did from firmware 0.2.100 to 0.14.0.
+
+        The names come from the add-on's own list, so a setting added there without its preference fails here.
+        auto_home and auto_home_seconds share one record, HomeTimeout."""
+        tiles = runtime_source()
+        def body(name):
+            start = tiles.index(f'inline void {name}()')
+            depth, end = 0, start
+            for i in range(tiles.index('{', start), len(tiles)):
+                depth += (tiles[i] == '{') - (tiles[i] == '}')
+                if depth == 0:
+                    end = i
+                    break
+            return tiles[start:end]
+        load, save = body('load_settings'), body('persist_settings')
+        for key in core.SETTINGS_BESIDE_BLOCK:
+            self.assertIn(key, save, f'{key} is never written: it would not survive a restart')
+            self.assertIn(key, load, f'{key} is never read back at boot')
+        # And each of them names a preference record, not another setting's.
+        records = set(re.findall(r'make_preference<[^>]+>\((0x[0-9A-Fa-f]+)\)', tiles))
+        self.assertEqual(len(records), len(re.findall(r'make_preference<', tiles)), 'two settings share one record')
+
     def test_the_page_and_every_entity_change_settings_the_same_way(self):
         self.assertRegex(SCREEN_PAGE, r'enum class SetResult : uint8_t \{ unknown, same, changed \};')
         for path in PROFILES.values():

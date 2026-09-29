@@ -65,6 +65,7 @@ using settings_screen::top_bar;
 inline esphome::ESPPreferenceObject rotation_preference;
 inline esphome::ESPPreferenceObject buttons_preference;
 inline esphome::ESPPreferenceObject top_bar_preference;
+inline esphome::ESPPreferenceObject home_button_preference;
 inline esphome::ESPPreferenceObject swipe_preference;
 inline esphome::ESPPreferenceObject home_preference;
 inline esphome::ESPPreferenceObject dark_preference;
@@ -276,6 +277,7 @@ inline void load_settings() {
   dark_preference = esphome::global_preferences->make_preference<uint32_t>(0x44524B31);
   buttons_preference = esphome::global_preferences->make_preference<uint32_t>(0x50474231);
   top_bar_preference = esphome::global_preferences->make_preference<uint32_t>(0x54425231);
+  home_button_preference = esphome::global_preferences->make_preference<uint32_t>(0x484B5931);
   numbers_preference = esphome::global_preferences->make_preference<uint32_t>(0x4E554D31);
   uint32_t numbers_saved=0;
   if(numbers_preference.load(&numbers_saved))screen_text_numbers(numbers_saved);
@@ -287,6 +289,10 @@ inline void load_settings() {
   if(buttons_preference.load(&buttons_saved))page_buttons=buttons_saved!=0;
   uint32_t top_bar_saved=1;
   if(top_bar_preference.load(&top_bar_saved))top_bar=top_bar_saved!=0;
+  // The home key had no preference of its own from firmware 0.2.100 to 0.14.0: switching it off held until the
+  // screen restarted, and then it was back (app 0.4.26).
+  uint32_t home_button_saved=1;
+  if(home_button_preference.load(&home_button_saved))settings_screen::home_button=home_button_saved!=0;
   HomeTimeout home;
   if(home_preference.load(&home) && home.seconds>=30 && home.seconds<=3600){
     auto_home=home.enabled?1:0;auto_home_seconds=(int32_t)home.seconds;
@@ -314,6 +320,8 @@ inline void persist_settings() {
   buttons_preference.save(&buttons);
   uint32_t bar = top_bar ? 1 : 0;
   top_bar_preference.save(&bar);
+  uint32_t key = settings_screen::home_button ? 1 : 0;
+  home_button_preference.save(&key);
   uint32_t turned = (uint32_t) rotation;
   rotation_preference.save(&turned);
 }
