@@ -1903,6 +1903,7 @@
         "running": "Egy pillanat…",
         "ready": "Letöltésre kész.",
         "done": "Kész.",
+        "stopped": "Leállítva.",
         "failed": "Ez nem sikerült."
       },
       "intro": "A Tessera egyedi kulcsokkal létrehozza a kijelző saját profilját, és lefordítja a firmware-t. Csatlakoztasd a kijelzőt USB-adatkábellel a Home Assistantot futtató géphez, vagy ahhoz a számítógéphez, amelyet most használsz.",
@@ -1973,6 +1974,7 @@
         "building": "Firmware fordítása…",
         "ready": "A firmware kész ehhez: {name}",
         "installed": "A firmware fent van ezen: {name}",
+        "stopped": "A fordítás leállt",
         "build_failed": "A fordítás sikertelen",
         "install_failed": "A telepítés sikertelen"
       },
@@ -1982,6 +1984,7 @@
         "building": "A fordítás egy Home Assistant-gépen, például Raspberry Pi-n, 20 percig vagy tovább is tarthat, főleg elsőre. Ez normális. Elhagyhatod ezt az oldalt: a telepítés tovább fut, és az Új kijelző alatt újra megtalálod.",
         "building_download": "A fordítás egy Home Assistant-gépen, például Raspberry Pi-n, 20 percig vagy tovább is tarthat, főleg elsőre. Ez normális. Elhagyhatod ezt az oldalt: a fordítás tovább fut, és az Új kijelző alatt újra megtalálod.",
         "downloaded": "Töltsd fel a kijelzőre a saját számítógépedről, majd párosítsd a kijelzőt a Home Assistanttal.",
+        "stopped": "Semmi nem került képernyőre. A profil mentve van, így az Újra gomb folytatja a fordítást ott, ahol abbamaradt.",
         "booted": "A kijelző elindul, és csatlakozik a Wi-Fi-hez. Most párosítsd a Home Assistanttal:",
         "booted_calibrate": "A kijelző elindul, és csatlakozik a Wi-Fi-hez. Előbb érintéskalibrálást kér: koppints a célkeresztekre. Most párosítsd a Home Assistanttal:",
         "see_log": "Lásd a lenti naplót."

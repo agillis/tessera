@@ -1,8 +1,10 @@
 // Firmware & USB -> Stop (app 0.4.24): the button is there only while something runs, and the answer to the stop is
 // what the page shows, so the log and the state are on screen without waiting for the next poll.
 import { flushPromises, mount } from "@vue/test-utils";
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import FirmwareView from "../src/components/FirmwareView.vue";
+import InstallerView from "../src/components/InstallerView.vue";
 import { state } from "../src/store";
 
 type Job = { file: string; action: string; state: string; started: number } | null;
@@ -61,5 +63,56 @@ describe("stopping a build", () => {
     await flushPromises();
     expect(view.find("#firmware-status").text()).toContain("running");
     expect(state.toast?.message).toBe("No build or installation is running.");
+  });
+});
+
+// New screen: the same Stop, on the build the wizard started. A stop is not a failure, so the card says so and the
+// log stays shut; Retry builds the profile that was already written again.
+describe("stopping a build in the New screen wizard", () => {
+  const SHAPES = JSON.parse(readFileSync("../screen_manager/app/boards.json", "utf8"));
+  const boards = { cyd: { ...SHAPES.cyd, ...SHAPES.cyd.catalog, orientations: SHAPES.cyd.orientations } };
+  const flush = async () => { await flushPromises(); await new Promise((done) => setTimeout(done, 0)); await flushPromises(); };
+
+  // The add-on: New screen writes the profile and starts the installation, and a stop ends it.
+  function wizard() {
+    const posted: string[] = [];
+    let job: any = null;
+    const status = () => ({ available: true, ports: ["/dev/ttyUSB0"], profiles: [], downloads: [], boards,
+      wifi: { state: "ready" }, taken: { nodes: [], prefixes: [] }, logs: job ? ["ESPHome: compile"] : [], job });
+    vi.stubGlobal("fetch", vi.fn(async (url: string, options: any = {}) => {
+      const path = String(url);
+      if (options.method === "POST" && path.endsWith("api/firmware/profiles")) {
+        job = { file: "hall.yaml", action: "install", state: "running", started: 7 };
+        return new Response(JSON.stringify({ file: "hall.yaml", api_key: "k", job }));
+      }
+      if (options.method === "POST" && path.endsWith("api/firmware/jobs/cancel")) {
+        posted.push(path);
+        job = { ...job, state: "interrupted" };
+        return new Response(JSON.stringify(status()));
+      }
+      return new Response(JSON.stringify(status()));
+    }));
+    return posted;
+  }
+
+  it("stops the installation it started, and says stopped rather than failed", async () => {
+    const posted = wizard();
+    const view = mount(InstallerView);
+    await flush();
+    await view.find("#install-target").setValue("/dev/ttyUSB0");
+    await view.find("#friendly_name").setValue("Hall");
+    await view.find("#install-form").trigger("submit");
+    await flush();
+    expect(view.find("#progress-title").text()).toContain("Building");
+    await view.find("#install-stop").trigger("click");
+    await flush();
+    expect(posted).toHaveLength(1);
+    expect(view.find("#install-title").text()).toBe("Stopped.");
+    expect(view.find("#progress-title").text()).toBe("Build stopped");
+    expect(view.find("#progress-detail").text()).toContain("Nothing was put on a screen");
+    expect(view.find("#progress-mark").classes()).toContain("stopped");
+    expect(view.find("#install-stop").exists()).toBe(false);
+    expect(view.find("#install-retry").exists()).toBe(true);
+    expect(view.find("#install-log-wrap").attributes("open")).toBeUndefined();
   });
 });

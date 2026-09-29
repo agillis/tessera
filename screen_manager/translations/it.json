@@ -1903,6 +1903,7 @@
         "running": "Un attimo…",
         "ready": "Pronto da scaricare.",
         "done": "Fatto.",
+        "stopped": "Interrotto.",
         "failed": "Non ha funzionato."
       },
       "intro": "Tessera crea il profilo dello schermo con chiavi uniche e compila il firmware. Collega lo schermo con un cavo USB dati alla macchina su cui gira Home Assistant, oppure al computer che stai usando ora.",
@@ -1973,6 +1974,7 @@
         "building": "Compilazione del firmware…",
         "ready": "Il firmware per {name} è pronto",
         "installed": "Il firmware è su {name}",
+        "stopped": "Compilazione interrotta",
         "build_failed": "Compilazione non riuscita",
         "install_failed": "Installazione non riuscita"
       },
@@ -1982,6 +1984,7 @@
         "building": "La compilazione può richiedere 20 minuti o più su un computer di Home Assistant come un Raspberry Pi, soprattutto la prima volta. È normale. Puoi lasciare questa pagina: l'installazione continua e la ritrovi in Nuovo schermo.",
         "building_download": "La compilazione può richiedere 20 minuti o più su un computer di Home Assistant come un Raspberry Pi, soprattutto la prima volta. È normale. Puoi lasciare questa pagina: la compilazione continua e la ritrovi in Nuovo schermo.",
         "downloaded": "Mettilo sullo schermo dal tuo computer, poi associa lo schermo a Home Assistant.",
+        "stopped": "Non è stato scritto nulla su uno schermo. Il profilo è salvato, quindi Riprova ricompila e riparte da quanto già compilato.",
         "booted": "Lo schermo si avvia e si collega al tuo Wi-Fi. Ora associalo a Home Assistant:",
         "booted_calibrate": "Lo schermo si avvia e si collega al tuo Wi-Fi. Prima chiede una calibrazione del touch: tocca le croci. Ora associalo a Home Assistant:",
         "see_log": "Vedi il registro qui sotto."

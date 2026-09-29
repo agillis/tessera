@@ -1903,6 +1903,7 @@
         "running": "Un instant…",
         "ready": "Prêt à télécharger.",
         "done": "Terminé.",
+        "stopped": "Arrêté.",
         "failed": "Cela n'a pas fonctionné."
       },
       "intro": "Tessera crée le profil propre à l'écran, avec des clés uniques, et compile le firmware. Branchez l'écran avec un câble USB de données sur la machine qui fait tourner Home Assistant, ou sur l'ordinateur que vous utilisez maintenant.",
@@ -1973,6 +1974,7 @@
         "building": "Compilation du firmware…",
         "ready": "Le firmware pour {name} est prêt",
         "installed": "Le firmware est sur {name}",
+        "stopped": "Compilation arrêtée",
         "build_failed": "Échec de la compilation",
         "install_failed": "Échec de l'installation"
       },
@@ -1982,6 +1984,7 @@
         "building": "La compilation peut prendre 20 minutes ou plus sur une machine Home Assistant comme un Raspberry Pi, surtout la première fois. C'est normal. Vous pouvez quitter cette page : l'installation continue et vous la retrouverez sous Nouvel écran.",
         "building_download": "La compilation peut prendre 20 minutes ou plus sur une machine Home Assistant comme un Raspberry Pi, surtout la première fois. C'est normal. Vous pouvez quitter cette page : la compilation continue et vous la retrouverez sous Nouvel écran.",
         "downloaded": "Installez-le sur l'écran depuis votre propre ordinateur, puis associez l'écran à Home Assistant.",
+        "stopped": "Rien n'a été écrit sur un écran. Le profil est enregistré, donc Réessayer relance la compilation et reprend là où elle s'était arrêtée.",
         "booted": "L'écran démarre et se connecte à votre Wi-Fi. Associez-le maintenant à Home Assistant :",
         "booted_calibrate": "L'écran démarre et se connecte à votre Wi-Fi. Il demande d'abord un étalonnage tactile : touchez les croix. Associez-le maintenant à Home Assistant :",
         "see_log": "Voir le journal ci-dessous."

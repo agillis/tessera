@@ -1903,6 +1903,7 @@
         "running": "Un momento…",
         "ready": "Listo para descargar.",
         "done": "Hecho.",
+        "stopped": "Detenido.",
         "failed": "No ha funcionado."
       },
       "intro": "Tessera crea el perfil propio de la pantalla con claves únicas y compila el firmware. Conecta la pantalla con un cable USB de datos al equipo donde se ejecuta Home Assistant, o al ordenador que estás usando ahora.",
@@ -1973,6 +1974,7 @@
         "building": "Compilando el firmware…",
         "ready": "El firmware para {name} está listo",
         "installed": "El firmware ya está en {name}",
+        "stopped": "Compilación detenida",
         "build_failed": "Error en la compilación",
         "install_failed": "Error en la instalación"
       },
@@ -1982,6 +1984,7 @@
         "building": "La compilación puede tardar 20 minutos o más en un equipo de Home Assistant como una Raspberry Pi, sobre todo la primera vez. Es normal. Puedes salir de esta página: la instalación sigue en marcha y la volverás a encontrar en Nueva pantalla.",
         "building_download": "La compilación puede tardar 20 minutos o más en un equipo de Home Assistant como una Raspberry Pi, sobre todo la primera vez. Es normal. Puedes salir de esta página: la compilación sigue en marcha y la volverás a encontrar en Nueva pantalla.",
         "downloaded": "Instálalo en la pantalla desde tu propio ordenador y luego empareja la pantalla con Home Assistant.",
+        "stopped": "No se escribió nada en ninguna pantalla. El perfil está guardado, así que Reintentar vuelve a compilar y continúa desde lo ya compilado.",
         "booted": "La pantalla arranca y se conecta a tu Wi-Fi. Empareja ahora la pantalla con Home Assistant:",
         "booted_calibrate": "La pantalla arranca y se conecta a tu Wi-Fi. Primero pide una calibración táctil: toca las cruces. Empareja ahora la pantalla con Home Assistant:",
         "see_log": "Consulta el registro de abajo."

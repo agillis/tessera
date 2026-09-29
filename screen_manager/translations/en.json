@@ -1903,6 +1903,7 @@
         "running": "One moment…",
         "ready": "Ready to download.",
         "done": "Done.",
+        "stopped": "Stopped.",
         "failed": "That didn't work."
       },
       "intro": "Tessera creates the screen's own profile with unique keys and builds the firmware. Connect the screen with a USB data cable to the machine running Home Assistant, or to the computer you're using now.",
@@ -1973,6 +1974,7 @@
         "building": "Building firmware…",
         "ready": "Firmware for {name} is ready",
         "installed": "Firmware is on {name}",
+        "stopped": "Build stopped",
         "build_failed": "Build failed",
         "install_failed": "Install failed"
       },
@@ -1982,6 +1984,7 @@
         "building": "Building can take 20 minutes or more on a Home Assistant machine such as a Raspberry Pi, the first time especially. That's normal. You can leave this page: the installation keeps running and you'll find it again under New screen.",
         "building_download": "Building can take 20 minutes or more on a Home Assistant machine such as a Raspberry Pi, the first time especially. That's normal. You can leave this page: the build keeps running and you'll find it again under New screen.",
         "downloaded": "Put it on the screen from your own computer, then pair the screen with Home Assistant.",
+        "stopped": "Nothing was put on a screen. The profile is saved, so Retry builds it again and carries on from what was compiled already.",
         "booted": "The screen boots up and connects to your Wi-Fi. Pair it with Home Assistant now:",
         "booted_calibrate": "The screen boots up and connects to your Wi-Fi. It first asks for a touch calibration: tap the crosshairs. Pair it with Home Assistant now:",
         "see_log": "See the log below."

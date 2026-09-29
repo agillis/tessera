@@ -152,7 +152,7 @@ async function installerRefresh() {
   } else if (installer.view === "progress" && ours) {
     job.value = current;
     logs.value = next.logs || [];
-    if (current.state !== "running" && current.state !== "success") logOpen.value = true;
+    if (current.state !== "running" && current.state !== "success" && current.state !== "interrupted") logOpen.value = true;
   }
 }
 function showProgress(current: any, lines: string[]) {
@@ -166,6 +166,12 @@ function showProgress(current: any, lines: string[]) {
 const flashing = computed(() => installer.browser && job.value?.state === "success" && flash.state.phase !== "done" && flash.state.phase !== "failed");
 const running = computed(() => job.value?.state === "running" || flashing.value);
 const ok = computed(() => installer.view === "done" || (job.value?.state === "success" && (!installer.browser || flash.state.phase === "done")));
+// Stopped from here or by an app restart (app 0.4.25): not a failure, so it doesn't get the words or the mark of one.
+// Retry builds it again; the profile was written before the build began and is still there.
+const stopped = computed(() => installer.view !== "done" && job.value?.state === "interrupted");
+// Only the add-on's own job can be stopped from here. While this browser writes the image over Web Serial there is
+// nothing on the other side to stop.
+const stoppable = computed(() => job.value?.state === "running");
 const download = computed(() => installer.action === "download" && !installer.browser);
 // The build is done: write it, erased first as ESPHome does for a new device. A retry after a finished build
 // connects again, and that writes the image it already has.
@@ -176,16 +182,27 @@ watch(() => [job.value?.state, flash.state.phase], ([state, phase]) => {
 watch(() => job.value?.state, (state) => {
   if (installer.browser && state && state !== "running" && state !== "success" && flash.state.phase === "waiting") flash.cancel();
 });
+async function stop() {
+  try {
+    await send("firmware/jobs/cancel", "POST");
+    await installerRefresh();
+  } catch (e: any) {
+    toast(e.message);
+  }
+}
 const title = computed(() => t(installer.view === "done"
   ? "editor.installer.title.saved"
-  : running.value ? "editor.installer.title.running" : ok.value ? (download.value ? "editor.installer.title.ready" : "editor.installer.title.done") : "editor.installer.title.failed"));
+  : running.value ? "editor.installer.title.running" : ok.value ? (download.value ? "editor.installer.title.ready" : "editor.installer.title.done")
+    : stopped.value ? "editor.installer.title.stopped" : "editor.installer.title.failed"));
 const progressTitle = computed(() => installer.view === "done"
   ? t("editor.installer.progress.saved", { file: installer.file })
   : running.value
     ? job.value?.stage === "upload" || flashing.value ? t("editor.installer.progress.writing", { name: installer.friendly }) : t("editor.installer.progress.building")
     : ok.value
       ? download.value ? t("editor.installer.progress.ready", { name: installer.friendly }) : t("editor.installer.progress.installed", { name: installer.friendly })
-      : t(download.value ? "editor.installer.progress.build_failed" : "editor.installer.progress.install_failed"));
+      : stopped.value
+        ? t("editor.installer.progress.stopped")
+        : t(download.value ? "editor.installer.progress.build_failed" : "editor.installer.progress.install_failed"));
 const progressDetail = computed(() => installer.view === "done"
   ? t("editor.installer.detail.saved")
   : running.value
@@ -196,9 +213,11 @@ const progressDetail = computed(() => installer.view === "done"
       ? download.value
         ? t("editor.installer.detail.downloaded")
         : t(installer.calibrate ? "editor.installer.detail.booted_calibrate" : "editor.installer.detail.booted")
-      : installer.browser && job.value?.state === "success"
-        ? ""
-        : logs.value.filter((l) => /error/i.test(l)).pop() || logs.value.filter((l) => /failed/i.test(l)).pop() || t("editor.installer.detail.see_log"));
+      : stopped.value
+        ? t("editor.installer.detail.stopped")
+        : installer.browser && job.value?.state === "success"
+          ? ""
+          : logs.value.filter((l) => /error/i.test(l)).pop() || logs.value.filter((l) => /failed/i.test(l)).pop() || t("editor.installer.detail.see_log"));
 const image = computed(() => ({ href: `api/firmware/profiles/${encodeURIComponent(installer.file || "")}/download`, name: (installer.file || "").replace(/\.yaml$/, "") + ".factory.bin" }));
 async function submit(event: Event) {
   const element = event.target as HTMLFormElement;
@@ -416,7 +435,7 @@ onBeforeUnmount(() => { clearInterval(poll); flash.cancel(); });
     <div v-else id="install-progress" class="card">
       <div class="progress-head">
         <span v-if="running" class="spin" id="progress-spin"></span>
-        <span v-else class="outcome" :class="ok ? 'ok' : 'bad'" id="progress-mark">{{ ok ? "✓" : "✕" }}</span>
+        <span v-else class="outcome" :class="ok ? 'ok' : stopped ? 'stopped' : 'bad'" id="progress-mark">{{ ok ? "✓" : stopped ? "■" : "✕" }}</span>
         <strong id="progress-title">{{ progressTitle }}</strong>
       </div>
       <p id="progress-detail">{{ progressDetail }}</p>
@@ -455,6 +474,7 @@ onBeforeUnmount(() => { clearInterval(poll); flash.cancel(); });
         <pre id="install-log" class="log">{{ logs.join("\n") }}</pre>
       </details>
       <div class="actions">
+        <button v-if="stoppable" type="button" class="btn quiet" id="install-stop" @click="stop()">{{ t("editor.firmware.stop") }}</button>
         <button v-if="!running && !ok" type="button" class="btn primary" id="install-retry" @click="retry">{{ t("editor.installer.retry") }}</button>
         <button type="button" class="btn quiet" id="install-close" :disabled="flash.busy()" @click="reset">{{ ok ? t("editor.installer.another") : t("editor.installer.start_over") }}</button>
         <button type="button" class="btn" :class="ok ? 'primary' : 'quiet'" :disabled="flash.busy()" @click="close">{{ ok ? t("editor.installer.done") : t("editor.common.close") }}</button>

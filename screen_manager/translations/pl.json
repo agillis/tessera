@@ -1903,6 +1903,7 @@
         "running": "Chwileczkę…",
         "ready": "Gotowe do pobrania.",
         "done": "Gotowe.",
+        "stopped": "Zatrzymano.",
         "failed": "Nie udało się."
       },
       "intro": "Tessera tworzy własny profil ekranu z unikalnymi kluczami i kompiluje firmware. Podłącz ekran kablem USB do transmisji danych do komputera z Home Assistant albo do komputera, którego teraz używasz.",
@@ -1973,6 +1974,7 @@
         "building": "Kompilowanie firmware…",
         "ready": "Firmware gotowy: {name}",
         "installed": "Firmware wgrany: {name}",
+        "stopped": "Kompilacja zatrzymana",
         "build_failed": "Kompilacja nieudana",
         "install_failed": "Instalacja nieudana"
       },
@@ -1982,6 +1984,7 @@
         "building": "Budowanie na komputerze z Home Assistant, takim jak Raspberry Pi, może trwać 20 minut lub dłużej, zwłaszcza za pierwszym razem. To normalne. Możesz opuścić tę stronę: instalacja trwa dalej, a znajdziesz ją ponownie w sekcji „Nowy ekran”.",
         "building_download": "Budowanie na komputerze z Home Assistant, takim jak Raspberry Pi, może trwać 20 minut lub dłużej, zwłaszcza za pierwszym razem. To normalne. Możesz opuścić tę stronę: kompilacja trwa dalej, a znajdziesz ją ponownie w sekcji „Nowy ekran”.",
         "downloaded": "Wgraj go na ekran z własnego komputera, a potem sparuj ekran z Home Assistant.",
+        "stopped": "Nic nie zostało zapisane na ekranie. Profil jest zapisany, więc Ponów kompiluje dalej od tego, co już skompilowano.",
         "booted": "Ekran się uruchamia i łączy z Twoją siecią Wi-Fi. Teraz sparuj go z Home Assistant:",
         "booted_calibrate": "Ekran się uruchamia i łączy z Twoją siecią Wi-Fi. Najpierw poprosi o kalibrację dotyku: dotykaj krzyżyków. Teraz sparuj go z Home Assistant:",
         "see_log": "Zobacz log poniżej."

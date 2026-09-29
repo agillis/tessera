@@ -1903,6 +1903,7 @@
         "running": "Um momento…",
         "ready": "Pronto para descarregar.",
         "done": "Concluído.",
+        "stopped": "Parado.",
         "failed": "Não funcionou."
       },
       "intro": "O Tessera cria o perfil próprio do ecrã com chaves únicas e compila o firmware. Ligue o ecrã com um cabo USB de dados à máquina onde corre o Home Assistant, ou ao computador que está a usar agora.",
@@ -1973,6 +1974,7 @@
         "building": "A compilar o firmware…",
         "ready": "O firmware para {name} está pronto",
         "installed": "O firmware já está em {name}",
+        "stopped": "Compilação parada",
         "build_failed": "A compilação falhou",
         "install_failed": "A instalação falhou"
       },
@@ -1982,6 +1984,7 @@
         "building": "A compilação pode demorar 20 minutos ou mais num computador do Home Assistant, como um Raspberry Pi, sobretudo da primeira vez. É normal. Pode sair desta página: a instalação continua e volta a encontrá-la em Novo ecrã.",
         "building_download": "A compilação pode demorar 20 minutos ou mais num computador do Home Assistant, como um Raspberry Pi, sobretudo da primeira vez. É normal. Pode sair desta página: a compilação continua e volta a encontrá-la em Novo ecrã.",
         "downloaded": "Instale-o no ecrã a partir do seu próprio computador e depois emparelhe o ecrã com o Home Assistant.",
+        "stopped": "Nada foi escrito num ecrã. O perfil está guardado, por isso Tentar novamente continua a compilação a partir do que já estava compilado.",
         "booted": "O ecrã arranca e liga-se à sua rede Wi-Fi. Emparelhe-o agora com o Home Assistant:",
         "booted_calibrate": "O ecrã arranca e liga-se à sua rede Wi-Fi. Primeiro pede uma calibração do toque: toque nas cruzes. Emparelhe-o agora com o Home Assistant:",
         "see_log": "Consulte o registo abaixo."

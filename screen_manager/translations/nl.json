@@ -1903,6 +1903,7 @@
         "running": "Even geduld…",
         "ready": "Klaar om te downloaden.",
         "done": "Klaar.",
+        "stopped": "Gestopt.",
         "failed": "Dat lukte niet."
       },
       "intro": "Tessera maakt een eigen profiel voor het scherm, met unieke sleutels, en bouwt de firmware. Sluit het scherm met een USB-datakabel aan op de machine waarop Home Assistant draait, of op de computer waar je nu achter zit.",
@@ -1973,6 +1974,7 @@
         "building": "Firmware bouwen…",
         "ready": "Firmware voor {name} is klaar",
         "installed": "Firmware staat op {name}",
+        "stopped": "Build gestopt",
         "build_failed": "Bouwen mislukt",
         "install_failed": "Installeren mislukt"
       },
@@ -1982,6 +1984,7 @@
         "building": "Bouwen kan op een Home Assistant-machine zoals een Raspberry Pi 20 minuten of langer duren, zeker de eerste keer. Dat is normaal. Je kunt deze pagina verlaten: de installatie loopt door en je vindt hem terug onder Nieuw scherm.",
         "building_download": "Bouwen kan op een Home Assistant-machine zoals een Raspberry Pi 20 minuten of langer duren, zeker de eerste keer. Dat is normaal. Je kunt deze pagina verlaten: het bouwen loopt door en je vindt het terug onder Nieuw scherm.",
         "downloaded": "Zet de firmware vanaf je eigen computer op het scherm en koppel het scherm daarna aan Home Assistant.",
+        "stopped": "Er is niets naar een scherm geschreven. Het profiel is bewaard, dus Opnieuw bouwt verder met wat al gecompileerd was.",
         "booted": "Het scherm start op en verbindt met je Wi-Fi. Koppel het nu aan Home Assistant:",
         "booted_calibrate": "Het scherm start op en verbindt met je Wi-Fi. Het vraagt eerst om een touch-kalibratie: tik op de kruisjes. Koppel het nu aan Home Assistant:",
         "see_log": "Bekijk het log hieronder."

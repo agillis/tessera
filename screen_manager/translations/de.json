@@ -1903,6 +1903,7 @@
         "running": "Einen Moment…",
         "ready": "Bereit zum Herunterladen.",
         "done": "Fertig.",
+        "stopped": "Angehalten.",
         "failed": "Das hat nicht geklappt."
       },
       "intro": "Tessera legt das eigene Profil des Bildschirms mit eindeutigen Schlüsseln an und erstellt die Firmware. Schließe den Bildschirm mit einem USB-Datenkabel an den Rechner an, auf dem Home Assistant läuft, oder an den Computer, an dem du gerade sitzt.",
@@ -1973,6 +1974,7 @@
         "building": "Firmware wird erstellt…",
         "ready": "Firmware für {name} ist fertig",
         "installed": "Firmware ist auf {name}",
+        "stopped": "Erstellung angehalten",
         "build_failed": "Erstellen fehlgeschlagen",
         "install_failed": "Installation fehlgeschlagen"
       },
@@ -1982,6 +1984,7 @@
         "building": "Das Bauen kann auf einem Home-Assistant-Rechner wie einem Raspberry Pi 20 Minuten oder länger dauern, besonders beim ersten Mal. Das ist normal. Du kannst diese Seite verlassen: Die Installation läuft weiter, und du findest sie unter „Neuer Bildschirm“ wieder.",
         "building_download": "Das Bauen kann auf einem Home-Assistant-Rechner wie einem Raspberry Pi 20 Minuten oder länger dauern, besonders beim ersten Mal. Das ist normal. Du kannst diese Seite verlassen: Die Firmware wird weiter erstellt, und du findest sie unter „Neuer Bildschirm“ wieder.",
         "downloaded": "Spiele sie von deinem eigenen Computer aus auf den Bildschirm und kopple den Bildschirm dann mit Home Assistant.",
+        "stopped": "Auf keinen Bildschirm wurde etwas geschrieben. Das Profil ist gespeichert, mit Erneut versuchen wird weitergebaut, wo die Erstellung aufgehört hat.",
         "booted": "Der Bildschirm startet und verbindet sich mit deinem Wi-Fi. Kopple ihn jetzt mit Home Assistant:",
         "booted_calibrate": "Der Bildschirm startet und verbindet sich mit deinem Wi-Fi. Er fragt zuerst nach einer Touch-Kalibrierung: Tippe auf die Kreuze. Kopple ihn jetzt mit Home Assistant:",
         "see_log": "Siehe das Protokoll unten."
