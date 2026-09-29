@@ -66,6 +66,15 @@ int main() {
   pages.records.pop_back();
   assert(history.pop(pages, 3) == pages.home && history.size == 0);
   assert(pages.footer(true) && !pages.footer(false));
+  // The bar along the top (firmware 0.15.0+): on with its setting, gone without it, but never gone while it holds
+  // the only way back off a page outside the swipe. The masks above left pages excluded, so start from a clean set.
+  for (auto &page : pages.records) page.excluded = false;
+  assert(pages.header(true, true) && pages.header(false, true));
+  assert(!pages.header(true, false) && !pages.header(false, false));
+  pages.records[1].excluded = true;
+  assert(!pages.header(true, false) && pages.header(false, false));
+  assert(pages.header(false, true) && pages.header(true, true));
+  pages.records[1].excluded = false;
   pages.records.resize(1); pages.records[0].excluded = true; pages.home = 0;
   assert(!pages.footer(true) && history.target(pages, 0) == 0);
   static_assert(sizeof(NavigationHistory) <= 72, "Back stores at most eight page IDs");

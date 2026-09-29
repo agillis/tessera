@@ -142,17 +142,10 @@ inline int previous_button_page(int page) {
 inline bool header_back() {
   return !settings_screen::page_buttons && shown_page && model.page_data.detail(*shown_page);
 }
-// Whether the bar along the top is drawn at all (firmware 0.15.0+). Off, it goes and the tiles take its room, but
-// not while it carries the only way off a page that is not in the swipe: with the page buttons off, Back is its
-// leading key (page_protocol.h footer()), and there would be no way back from such a page at all. The question is
-// asked of the whole layout, never of the page on the glass, so the tiles keep one geometry however you walk
-// through the pages, as the room for the page buttons does.
+// Whether the bar along the top is drawn at all (firmware 0.15.0+); the rule itself is page_protocol.h's, beside
+// the one for the bar at the bottom.
 inline bool header_shown() {
-  if (settings_screen::top_bar) return true;
-  if (settings_screen::page_buttons) return false;
-  for (size_t i = 0; i < model.page_data.records.size(); ++i)
-    if (model.page_data.detail((int) i)) return true;
-  return false;
+  return model.page_data.header(settings_screen::page_buttons != 0, settings_screen::top_bar != 0);
 }
 inline lv_obj_t *time_label = nullptr;
 inline const lv_font_t *header_text_font = nullptr, *header_icon_font = nullptr;
