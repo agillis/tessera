@@ -38,6 +38,10 @@ LOG = logging.getLogger('screen_manager')
 API = 'https://tessera-maxgramser.on-forge.com/api/v1/addon'
 FEEDBACK_URL = f'{API}/feedback'
 BOARDS_URL = f'{API}/boards'
+# No website to share with (API empty): the card never asks, and an answer someone reaches for anyway is refused
+# before anything is stored, so nothing is ever kept for a request that cannot go out. A fork without a website of
+# its own sets API to '' (fork/brand.py); everything below is unchanged for one that has it.
+SHARING = bool(API)
 PRIVACY_URL = 'https://tessera-maxgramser.on-forge.com/privacy'
 STORAGE_VERSION = 1
 
@@ -202,7 +206,7 @@ class Feedback:
     def asks(self, device):
         record = self.boards.get(device) or {}
         now = self.clock()
-        return (not self.readonly and not record.get('dismissed') and not record.get('answered')
+        return (SHARING and not self.readonly and not record.get('dismissed') and not record.get('answered')
                 and record.get('later_count', 0) < LATER_LIMIT
                 and isinstance(record.get('first_usable_at'), (int, float)) and now >= record['first_usable_at'] + ASK_AFTER
                 and now >= record.get('ask_after', 0))
@@ -322,6 +326,8 @@ class Feedback:
     async def board_known(self, board):
         """Whether the website knows this model: True, False, or None when its list can't be read (then the ids of
         boards.yaml, which are the website's own, decide, and the website refuses a model it doesn't have)."""
+        if not SHARING:
+            return False
         now = self.clock()
         if self.known_boards is None or now - self.known_at > CATALOGUE_TTL:
             boards = await self.catalogue(self.client())

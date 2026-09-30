@@ -63,9 +63,19 @@ async def catalogue(session):
     return {'cyd', 'guition', 'waveshare43'}
 
 
+
+def sharing(case):
+    """This test has a website to share with: feedback.SHARING is what the app asks, and a build without an endpoint
+    (a fork with no website of its own) has it off."""
+    previous = feedback.SHARING
+    feedback.SHARING = True
+    case.addCleanup(setattr, feedback, 'SHARING', previous)
+
+
 @unittest.skipUnless(HAS_AIOHTTP, 'Run using .venv-portal/bin/python for server tests')
 class SharingAnAnswer(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
+        sharing(self)
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.path = Path(self.tmp.name) / 'feedback.json'
@@ -216,6 +226,7 @@ class SharingAnAnswer(unittest.IsolatedAsyncioTestCase):
 @unittest.skipUnless(HAS_AIOHTTP, 'Run using .venv-portal/bin/python for server tests')
 class AskingAndDeleting(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
+        sharing(self)
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.path = Path(self.tmp.name) / 'feedback.json'
@@ -303,6 +314,9 @@ class AskingAndDeleting(unittest.IsolatedAsyncioTestCase):
 
 @unittest.skipUnless(HAS_AIOHTTP, 'Run using .venv-portal/bin/python for server tests')
 class TheEditorsRoute(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        sharing(self)
+
     async def test_the_page_gets_a_view_without_the_key_and_answers_through_the_app(self):
         with tempfile.TemporaryDirectory() as tmp:
             (Path(tmp) / 'screens.json').write_text(json.dumps({'version': 1, 'screens': {'text.screen': {'title': 'Office', 'tiles': []}}}))
