@@ -8,17 +8,38 @@ anything else that belongs only to this fork.
 Everything in this `fork/` folder exists only here. Upstream has no such folder, so it never causes a conflict when
 this fork is brought up to date, and it is never part of a pull request.
 
-## What carries the name
+## What makes it its own project
 
-Home Assistant reads three things and nothing else:
+`fork/brand.py` owns every line that must not go upstream, in two kinds.
+
+**The name Home Assistant shows:**
 
 | Where | Upstream | Here |
 |---|---|---|
-| `repository.yaml` `name` | Tessera | Tessera Dev |
+| `repository.yaml` `name`, `url`, `maintainer` | Tessera, upstream's website | Tessera Dev, this repository |
 | `screen_manager/config.yaml` `name` | Tessera Screen Manager | Tessera Dev Screen Manager |
 | `screen_manager/config.yaml` `panel_title` | Tessera | Tessera Dev |
 
-`fork/brand.py` puts those on and takes them off:
+**Where things come from and go to:**
+
+| Where | Upstream | Here |
+|---|---|---|
+| `screen_manager/app/core.py` `REPO` | upstream's repository | this one: the screens build their firmware from here |
+| `packages/<board>.yaml` | upstream's URL and fonts | this one (generated from `REPO`, never edited by hand) |
+| `screen_manager/app/feedback.py` `API` | upstream's website | empty: nothing is shared, and the card never asks |
+| `docker/compose.yaml` image | `ghcr.io/maxgramser/...` | `ghcr.io/agillis/tessera` |
+| `README.md`, `docs/EASY_SETUP.md` | upstream's repository to add to HA | this one |
+| `.github/FUNDING.yml` | upstream's donation link | none |
+| `.github/workflows/preview.yml` | upstream's commit identity | the Actions bot |
+
+The screens' firmware is the part that matters most: since `REPO` points here, a firmware change reaches a screen once
+it is **pushed to GitHub**. ESPHome fetches the packages over HTTPS at build time, so an unpushed change never gets to
+the glass. Build from the checkout instead while working on one: `esphome run checkout/<board>.yaml`
+(`checkout/README.md`).
+
+Upstream's copyright stays in `LICENSE`, and `NOTICE` says this is a fork of it.
+
+`fork/brand.py` puts all of that on and takes it off:
 
 ```sh
 python3 fork/brand.py            # put the name on
@@ -102,24 +123,10 @@ Upstream's `AGENTS.md` is the house style to follow in the change itself: plain 
 personal entity ids, `tools/check.sh` green, and a `CHANGELOG.md` entry with the version bump as the last commit of
 the branch, where the maintainer can redo or drop it.
 
-## The screens' own firmware still comes from upstream
+## Keeping pull requests clean
 
-A screen installed from this add-on builds its firmware from the packages on GitHub, and
-`screen_manager/app/core.py` still points those at the upstream repository:
-
-```python
-REPO = 'https://github.com/MaxGramser/homeassistant_espscreen'
-REF = 'main'
-```
-
-So a change to `packages/` or `components/` in this fork does **not** reach a screen installed from Tessera Dev. Two
-ways round that, deliberately not done here:
-
-- **Build from this checkout**, which is what `checkout/` is for and what does not touch anything shared:
-  `esphome run checkout/cyd.yaml` (see `checkout/README.md`).
-- **Point the packages at this fork**: `REPO`/`REF` in `core.py`, the `url:` and `FONT_DIR` in every
-  `packages/<board>.yaml` (written by `tools/generate_entries.py`), plus two places that match the upstream name as
-  text: `FONT_URL` in `tests/test_release_lint.py` and the `'homeassistant_espscreen' not in raw` check in
-  `screen_manager/app/firmware.py`. ESPHome fetches packages over HTTPS, so every firmware change then has to be
-  pushed to GitHub before a screen can build it. If you do this, make it part of the branding commit, never part of a
-  pull request.
+`fork/brand.py --remove` puts upstream's identity back, which is what `fork/pr.sh` checks before it lets a branch go
+out. So work that is meant for upstream stays sendable: write it as an ordinary commit, cut the branch from
+`upstream/main` with `fork/pr.sh`, and the identity never rides along. Three pieces of this fork's work were written
+that way on purpose and could go upstream as they are: the repository named in one place, the feedback card needing a
+website to share with, and the Stop button.

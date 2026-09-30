@@ -35,14 +35,14 @@ from aiohttp import ClientError, ClientSession, ClientTimeout
 
 LOG = logging.getLogger('screen_manager')
 
-API = 'https://tessera-maxgramser.on-forge.com/api/v1/addon'
+API = ''  # Tessera Dev has no website of its own, and upstream's is not this fork's to write to
 FEEDBACK_URL = f'{API}/feedback'
 BOARDS_URL = f'{API}/boards'
 # No website to share with (API empty): the card never asks, and an answer someone reaches for anyway is refused
 # before anything is stored, so nothing is ever kept for a request that cannot go out. A fork without a website of
 # its own sets API to '' (fork/brand.py); everything below is unchanged for one that has it.
 SHARING = bool(API)
-PRIVACY_URL = 'https://tessera-maxgramser.on-forge.com/privacy'
+PRIVACY_URL = ''
 STORAGE_VERSION = 1
 
 OUTCOMES = ('working', 'not_working')

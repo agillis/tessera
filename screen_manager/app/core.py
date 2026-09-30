@@ -82,7 +82,7 @@ FULL_PAGE_MIN_FIRMWARE = (0, 2, 62)
 # Twenty tiles from firmware 0.2.7, ten before.
 TWENTY_TILES_MIN_FIRMWARE = (0, 2, 7)
 FIRST_MAX_TILES = 10
-REPO = 'https://github.com/MaxGramser/homeassistant_espscreen'
+REPO = 'https://github.com/agillis/tessera'
 # The branch a screen's YAML builds its board package from. Which boards there are is boards.json's (BOARD_KEYS).
 REF = 'main'
 # The shared firmware of this app release: packages/core.yaml's SCREEN_FIRMWARE_VERSION, what every board builds
