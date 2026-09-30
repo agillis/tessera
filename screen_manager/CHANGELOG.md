@@ -1,3 +1,18 @@
+## 0.4.30 (firmware 0.18.0)
+
+- **Tessera Dev is a project of its own.** The screens now build their firmware from this repository instead of the
+  upstream project's, so firmware work here reaches the glass once it is pushed. Before this, a screen installed from
+  Tessera Dev ran upstream's firmware: the Top bar setting of 0.4.29 had no entity on the screen, so its row never
+  appeared, and every screen showed an update it could never finish. Anything already installed has to be built again
+  once, from New screen or Firmware & USB, to move onto this repository's packages.
+- The add-on shares nothing with the upstream project's website any more. Its feedback card asked whether a board
+  works and posted the answer there; that website is not this fork's to write to and this fork has none, so the card
+  never asks and nothing leaves the app.
+- The repository a screen builds from is now named in one place, so the entry files, the add-on and the release checks
+  cannot disagree about it.
+- Tested: tools/check.sh, and every board built on ESPHome 2026.9.0 from this repository's own packages. Not tried on
+  a screen by hand yet.
+
 ## 0.4.29 (firmware 0.17.0)
 
 - **The top bar can go.** A new screen setting, **Top bar**, under Settings on the screen itself, in Home Assistant
