@@ -16,6 +16,11 @@ from i18n import t
 
 LOG = logging.getLogger('screen_manager')
 
+# The repository a screen's YAML builds from, as owner/name: a profile of this project names it as
+# https://github.com/<slug> (or raw.githubusercontent.com/<slug> for the fonts), and one built from a clone says
+# packages/core.yaml instead. Taken from core.REPO so a fork changes it in one place.
+REPO_SLUG = REPO.split('github.com/', 1)[-1]
+
 # libyaml parses a 300 KB profile roughly ten times faster than the pure-Python loader.
 class LenientLoader(yaml.CSafeLoader if getattr(yaml, '__with_libyaml__', False) else yaml.SafeLoader):
     """Reads profile metadata without resolving !secret or !include."""
@@ -265,7 +270,7 @@ class Firmware:
         written only when this one name is the one thing that changed. True when it changed."""
         profile = self.profile(name)
         raw = profile.read_bytes().decode('utf-8')
-        if 'homeassistant_espscreen' not in raw and 'packages/core.yaml' not in raw:
+        if REPO_SLUG not in raw and 'packages/core.yaml' not in raw:
             return False
         newline = '\r\n' if '\r\n' in raw else '\n'
         text = raw.replace('\r\n', '\n')

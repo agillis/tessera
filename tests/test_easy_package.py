@@ -9,6 +9,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools'))
 import profiles  # noqa: E402
+sys.path.insert(0, str(ROOT / 'screen_manager/app'))
+from core import REF, REPO  # noqa: E402
 
 BOARDS = {'cyd': 'checkout/cyd.yaml', 'guition': 'checkout/guition.yaml',
           'waveshare7': 'checkout/waveshare7.yaml'}
@@ -48,8 +50,10 @@ class PackageTests(unittest.TestCase):
             package = (ROOT / 'packages' / f'{board}.yaml').read_text()
             self.assertNotIn('!secret', package)
             self.assertNotIn('type: local', package)
-            self.assertIn('url: https://github.com/MaxGramser/homeassistant_espscreen.git', package)
-            self.assertIn('FONT_DIR: "https://raw.githubusercontent.com/MaxGramser/homeassistant_espscreen/main/fonts"', package)
+            # The repository and branch the add-on writes into a screen's YAML (core.REPO/REF), so a fork's entries
+            # and its screens cannot end up pointing at two different places.
+            self.assertIn(f'url: {REPO}.git', package)
+            self.assertIn(f'FONT_DIR: "{REPO.replace("https://github.com/", "https://raw.githubusercontent.com/")}/{REF}/fonts"', package)
             # The fonts of the shared core come from that place; a checkout entry takes them from the checkout's own fonts/.
             self.assertIn('file: "${FONT_DIR}/Roboto-500.ttf"', profiles.CORE.read_text())
             self.assertIn('FONT_DIR: "../fonts"', (ROOT / BOARDS[board]).read_text())

@@ -24,7 +24,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import profiles  # noqa: E402
 
 ROOT = profiles.ROOT
-REPO = 'https://github.com/MaxGramser/homeassistant_espscreen'
+sys.path.insert(0, str(ROOT / 'screen_manager/app'))
+# The repository a screen builds from is the add-on's own (core.REPO): it writes that URL into every screen's YAML,
+# so a second copy of it here could send the entries and the screens to two different places.
+from core import REPO, REF  # noqa: E402
+# The fonts come from the same repository and branch, over raw.githubusercontent.
+FONT_BASE = REPO.replace('https://github.com/', 'https://raw.githubusercontent.com/')
 
 
 def components(board):
@@ -51,7 +56,7 @@ def package_entry(board):
 # of that lives here. The screen is two packages: core.yaml, which every board shares, and boards/{file} with this
 # board's hardware and sizes (docs/PROFILES.md). checkout/{board}.yaml builds the same two from a checkout.
 substitutions:
-  FONT_DIR: "https://raw.githubusercontent.com/MaxGramser/homeassistant_espscreen/main/fonts"
+  FONT_DIR: "{FONT_BASE}/{REF}/fonts"
 
 packages:
   core: !include core.yaml
@@ -61,7 +66,7 @@ external_components:
   - source:
       type: git
       url: {REPO}.git
-      ref: main
+      ref: {REF}
       path: components
     refresh: 0s
     components: [{", ".join(components(board))}]
